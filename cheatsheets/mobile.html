@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mobile Security Testing Cheatsheet | maeitsec</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root{--bg-primary:#0a0a0f;--bg-secondary:#12121a;--bg-tertiary:#1a1a24;--accent:#00ff88;--accent-dim:#00cc6a;--accent-glow:rgba(0,255,136,0.15);--text-primary:#e4e4e7;--text-secondary:#a1a1aa;--text-muted:#71717a;--border:#27272a;--red:#ff4757;--yellow:#ffa502;--blue:#3b82f6;--purple:#a855f7;--orange:#f97316;--green:#10b981}*{margin:0;padding:0;box-sizing:border-box}html{scroll-behavior:smooth}body{font-family:'Inter',sans-serif;background:var(--bg-primary);color:var(--text-primary);line-height:1.6}nav{position:fixed;top:0;width:100%;padding:1rem 2rem;background:rgba(10,10,15,0.95);backdrop-filter:blur(10px);border-bottom:1px solid var(--border);z-index:1000;display:flex;justify-content:space-between;align-items:center}.logo{font-family:'JetBrains Mono',monospace;font-size:1.25rem;font-weight:700;color:var(--accent);text-decoration:none}.logo span{color:var(--text-primary)}.back-link{color:var(--text-secondary);text-decoration:none;display:flex;align-items:center;gap:0.5rem;font-size:0.9rem;transition:color 0.3s}.back-link:hover{color:var(--accent)}.container{max-width:1400px;margin:0 auto;padding:5rem 2rem 3rem;display:grid;grid-template-columns:250px 1fr;gap:3rem}.sidebar{position:sticky;top:5rem;height:fit-content}.sidebar-title{font-size:0.75rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-muted);margin-bottom:1rem}.sidebar-nav{list-style:none}.sidebar-nav li{margin-bottom:0.25rem}.sidebar-nav a{display:block;padding:0.5rem 1rem;color:var(--text-secondary);text-decoration:none;font-size:0.9rem;border-left:2px solid transparent;transition:all 0.2s}.sidebar-nav a:hover{color:var(--accent);border-left-color:var(--accent);background:var(--accent-glow)}.content{min-width:0}.page-header{margin-bottom:3rem;padding-bottom:2rem;border-bottom:1px solid var(--border)}.page-header h1{font-size:2.5rem;margin-bottom:0.5rem}.page-header p{color:var(--text-secondary);font-size:1.1rem}.section{margin-bottom:3rem;scroll-margin-top:5rem}.section-title{display:flex;align-items:center;gap:0.75rem;font-size:1.5rem;margin-bottom:1.5rem;color:var(--accent)}.section-title::after{content:'';flex:1;height:1px;background:var(--border)}.code-block{background:var(--bg-secondary);border:1px solid var(--border);border-radius:8px;margin-bottom:1.5rem;overflow:hidden}.code-header{display:flex;justify-content:space-between;align-items:center;padding:0.75rem 1rem;background:var(--bg-tertiary);border-bottom:1px solid var(--border)}.code-title{font-size:0.85rem;color:var(--text-secondary);font-weight:500}.code-tag{font-size:0.7rem;padding:0.2rem 0.5rem;border-radius:4px;font-family:'JetBrains Mono',monospace}.tag-android{background:rgba(16,185,129,0.2);color:var(--green)}.tag-ios{background:rgba(59,130,246,0.2);color:var(--blue)}.tag-frida{background:rgba(168,85,247,0.2);color:var(--purple)}.tag-ssl{background:rgba(255,165,2,0.2);color:var(--yellow)}.code-content{padding:1rem;overflow-x:auto}.code-content pre{font-family:'JetBrains Mono',monospace;font-size:0.85rem;line-height:1.6;color:var(--text-primary);white-space:pre-wrap;word-break:break-all}.code-content .comment{color:var(--text-muted)}.copy-btn{background:var(--bg-tertiary);border:1px solid var(--border);color:var(--text-secondary);padding:0.3rem 0.6rem;border-radius:4px;font-size:0.75rem;cursor:pointer;transition:all 0.2s}.copy-btn:hover{background:var(--accent);color:var(--bg-primary);border-color:var(--accent)}.info-box{background:var(--bg-secondary);border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:8px;padding:1rem 1.25rem;margin-bottom:1.5rem}.info-box.warning{border-left-color:var(--yellow)}.info-box-title{font-weight:600;margin-bottom:0.5rem}.info-box p{color:var(--text-secondary);font-size:0.95rem}footer{text-align:center;padding:2rem;border-top:1px solid var(--border);color:var(--text-muted);font-size:0.85rem}@media(max-width:900px){.container{grid-template-columns:1fr;padding-top:4rem}.sidebar{display:none}}
+    </style>
+</head>
+<body>
+    <nav>
+        <a href="../index.html" class="logo">&lt;<span>maeitsec</span>/&gt;</a>
+        <a href="../index.html#cheatsheets" class="back-link">← Back to Cheatsheets</a>
+    </nav>
+
+    <div class="container">
+        <aside class="sidebar">
+            <div class="sidebar-title">On This Page</div>
+            <ul class="sidebar-nav">
+                <li><a href="#setup">Environment Setup</a></li>
+                <li><a href="#android-static">Android Static Analysis</a></li>
+                <li><a href="#android-dynamic">Android Dynamic Analysis</a></li>
+                <li><a href="#ios-static">iOS Static Analysis</a></li>
+                <li><a href="#ios-dynamic">iOS Dynamic Analysis</a></li>
+                <li><a href="#frida">Frida Scripts</a></li>
+                <li><a href="#ssl">SSL Pinning Bypass</a></li>
+                <li><a href="#root">Root/Jailbreak Detection</a></li>
+                <li><a href="#storage">Data Storage</a></li>
+                <li><a href="#tools">Tools</a></li>
+            </ul>
+        </aside>
+
+        <main class="content">
+            <header class="page-header">
+                <h1>📱 Mobile Security Testing</h1>
+                <p>Comprehensive cheatsheet for Android and iOS application penetration testing.</p>
+            </header>
+
+            <section id="setup" class="section">
+                <h2 class="section-title">⚙️ Environment Setup</h2>
+                
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-title">Android Setup</span>
+                        <span class="code-tag tag-android">Android</span>
+                    </div>
+                    <div class="code-content">
+<pre><span class="comment"># ADB commands</span>
+adb devices                           <span class="comment"># List connected devices</span>
+adb shell                             <span class="comment"># Open shell</span>
+adb install app.apk                   <span class="comment"># Install APK</span>
+adb pull /path/to/file ./             <span class="comment"># Download file</span>
+adb push ./file /path/to/             <span class="comment"># Upload file</span>
+adb logcat                            <span class="comment"># View logs</span>
+adb shell pm list packages            <span class="comment"># List installed packages</span>
+adb shell pm path com.app.name        <span class="comment"># Get APK path</span>
+
+<span class="comment"># Extract APK from device</span>
+adb shell pm path com.target.app
+adb pull /data/app/com.target.app-1/base.apk
+
+<span class="comment"># Proxy setup</span>
+adb shell settings put global http_proxy 192.168.1.100:8080
+adb shell settings put global http_proxy :0  <span class="comment"># Remove proxy</span>
+
+<span class="comment"># Install Burp certificate</span>
+adb push cacert.der /sdcard/
+<span class="comment"># Settings → Security → Install from storage</span></pre>
+                    </div>
+                </div>
+
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-title">iOS Setup</span>
+                        <span class="code-tag tag-ios">iOS</span>
+                    </div>
+                    <div class="code-content">
+<pre><span class="comment"># SSH to jailbroken device (default: alpine)</span>
+ssh root@192.168.1.50
+
+<span class="comment"># Transfer files</span>
+scp file.ipa root@192.168.1.50:/var/root/
+scp -r root@192.168.1.50:/var/mobile/Containers/Data/Application/APP-UUID/ ./
+
+<span class="comment"># Install IPA with ideviceinstaller</span>
+ideviceinstaller -i app.ipa
+
+<span class="comment"># Find app bundle</span>
+find /var/containers/Bundle/Application -name "*.app"
+
+<span class="comment"># Find app data</span>
+find /var/mobile/Containers/Data/Application -name "com.target.app"
+
+<span class="comment"># Install Burp CA</span>
+<span class="comment"># Download cert, email to device, install profile</span>
+<span class="comment"># Settings → General → About → Certificate Trust Settings → Enable</span>
+
+<span class="comment"># Objection device info</span>
+objection -g com.target.app explore</pre>
+                    </div>
+                </div>
+            </section>
+
+            <section id="android-static" class="section">
+                <h2 class="section-title">🤖 Android Static Analysis</h2>
+                
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-title">APK Decompilation</span>
+                        <span class="code-tag tag-android">Android</span>
+                    </div>
+                    <div class="code-content">
+<pre><span class="comment"># apktool - decompile/recompile</span>
+apktool d app.apk -o output_dir/
+apktool b output_dir/ -o new_app.apk
+
+<span class="comment"># jadx - decompile to Java</span>
+jadx app.apk -d output_dir/
+jadx-gui app.apk  <span class="comment"># GUI version</span>
+
+<span class="comment"># dex2jar + jd-gui</span>
+d2j-dex2jar app.apk
+jd-gui app-dex2jar.jar
+
+<span class="comment"># unzip APK manually</span>
+unzip app.apk -d extracted/
+<span class="comment"># Contains: classes.dex, AndroidManifest.xml, res/, lib/, assets/</span>
+
+<span class="comment"># MobSF - automated analysis</span>
+docker run -it --rm -p 8000:8000 opensecurity/mobile-security-framework-mobsf</pre>
+                    </div>
+                </div>
+
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-title">Android Manifest Analysis</span>
+                        <span class="code-tag tag-android">Android</span>
+                    </div>
+                    <div class="code-content">
+<pre><span class="comment"># Key things to check in AndroidManifest.xml:</span>
+
+<span class="comment"># 1. Exported components (activities, services, receivers, providers)</span>
+android:exported="true"  <span class="comment"># Can be accessed by other apps</span>
+
+<span class="comment"># 2. Debuggable flag</span>
+android:debuggable="true"  <span class="comment"># CRITICAL - allows debugging</span>
+
+<span class="comment"># 3. Backup flag</span>
+android:allowBackup="true"  <span class="comment"># Data can be backed up</span>
+
+<span class="comment"># 4. Network security config</span>
+android:networkSecurityConfig="@xml/network_security_config"
+
+<span class="comment"># 5. Permissions</span>
+uses-permission android:name="android.permission.INTERNET"
+uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
+
+<span class="comment"># 6. Deep links</span>
+&lt;intent-filter&gt;
+    &lt;data android:scheme="myapp" android:host="callback"/&gt;
+&lt;/intent-filter&gt;
+
+<span class="comment"># Exploit exported activity</span>
+adb shell am start -n com.target.app/.ExportedActivity
+adb shell am start -n com.target.app/.DeepLinkActivity -d "myapp://callback?token=xxx"</pre>
+                    </div>
+                </div>
+
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-title">Hardcoded Secrets Search</span>
+                        <span class="code-tag tag-android">Android</span>
+                    </div>
+                    <div class="code-content">
+<pre><span class="comment"># Search for secrets in decompiled code</span>
+grep -rni "api_key\|apikey\|secret\|password\|token" ./
+grep -rni "-----BEGIN" ./  <span class="comment"># Private keys</span>
+grep -rni "firebase\|aws\|azure" ./
+
+<span class="comment"># Common locations</span>
+res/values/strings.xml
+assets/
+shared_prefs/
+databases/
+
+<span class="comment"># Search for URLs</span>
+grep -rniE "https?://" ./
+grep -rni "192\.168\|10\.\|172\." ./  <span class="comment"># Internal IPs</span>
+
+<span class="comment"># Firebase misconfig</span>
+grep -rni "firebaseio.com" ./
+<span class="comment"># Test: https://PROJECT.firebaseio.com/.json</span>
+
+<span class="comment"># AWS keys</span>
+grep -rniE "AKIA[0-9A-Z]{16}" ./
+grep -rniE "aws_secret_access_key" ./</pre>
+                    </div>
+                </div>
+            </section>
+
+            <section id="android-dynamic" class="section">
+                <h2 class="section-title">🔄 Android Dynamic Analysis</h2>
+                
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-title">Runtime Analysis</span>
+                        <span class="code-tag tag-android">Android</span>
+                    </div>
+                    <div class="code-content">
+<pre><span class="comment"># Drozer - Android security assessment</span>
+drozer console connect
+run app.package.list -f target
+run app.package.info -a com.target.app
+run app.package.attacksurface com.target.app
+run app.activity.info -a com.target.app
+run app.activity.start --component com.target.app com.target.app.ExportedActivity
+run app.provider.info -a com.target.app
+run scanner.provider.finduris -a com.target.app
+run app.provider.query content://com.target.app.provider/users
+
+<span class="comment"># Logcat monitoring</span>
+adb logcat | grep -i "com.target.app\|password\|token\|key"
+adb logcat --pid=$(adb shell pidof com.target.app)
+
+<span class="comment"># Inspect shared preferences</span>
+adb shell
+run-as com.target.app
+cat shared_prefs/*.xml
+
+<span class="comment"># Inspect databases</span>
+adb shell
+run-as com.target.app
+sqlite3 databases/app.db
+.tables
+SELECT * FROM users;</pre>
+                    </div>
+                </div>
+            </section>
+
+            <section id="ios-static" class="section">
+                <h2 class="section-title">🍎 iOS Static Analysis</h2>
+                
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-title">IPA Analysis</span>
+                        <span class="code-tag tag-ios">iOS</span>
+                    </div>
+                    <div class="code-content">
+<pre><span class="comment"># Extract IPA</span>
+unzip app.ipa -d extracted/
+<span class="comment"># Contains: Payload/App.app/</span>
+
+<span class="comment"># Binary analysis with otool</span>
+otool -L App  <span class="comment"># List linked libraries</span>
+otool -hv App  <span class="comment"># Header info</span>
+
+<span class="comment"># Check for PIE (Position Independent Executable)</span>
+otool -hv App | grep PIE
+
+<span class="comment"># Check for ARC (Automatic Reference Counting)</span>
+otool -Iv App | grep -i objc_release
+
+<span class="comment"># Strings analysis</span>
+strings App | grep -i "api\|key\|secret\|password\|http"
+
+<span class="comment"># class-dump - extract headers</span>
+class-dump App > headers.h
+
+<span class="comment"># Hopper/IDA/Ghidra for disassembly</span>
+
+<span class="comment"># Check Info.plist</span>
+plutil -p Info.plist
+<span class="comment"># Look for: URL schemes, permissions, ATS settings</span></pre>
+                    </div>
+                </div>
+
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-title">Info.plist Security Checks</span>
+                        <span class="code-tag tag-ios">iOS</span>
+                    </div>
+                    <div class="code-content">
+<pre><span class="comment"># App Transport Security (ATS)</span>
+NSAppTransportSecurity
+  NSAllowsArbitraryLoads: true  <span class="comment"># BAD - allows HTTP</span>
+  NSExceptionDomains  <span class="comment"># Check exceptions</span>
+
+<span class="comment"># URL Schemes (deep links)</span>
+CFBundleURLTypes
+  CFBundleURLSchemes: ["myapp"]
+<span class="comment"># Test: myapp://callback?token=xxx</span>
+
+<span class="comment"># Background modes</span>
+UIBackgroundModes
+
+<span class="comment"># Privacy permissions</span>
+NSCameraUsageDescription
+NSPhotoLibraryUsageDescription
+NSLocationWhenInUseUsageDescription
+
+<span class="comment"># Exported activities</span>
+LSApplicationQueriesSchemes</pre>
+                    </div>
+                </div>
+            </section>
+
+            <section id="ios-dynamic" class="section">
+                <h2 class="section-title">🔄 iOS Dynamic Analysis</h2>
+                
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-title">Objection Commands</span>
+                        <span class="code-tag tag-ios">iOS</span>
+                    </div>
+                    <div class="code-content">
+<pre><span class="comment"># Start objection</span>
+objection -g com.target.app explore
+
+<span class="comment"># iOS commands</span>
+ios info binary
+ios plist cat Info.plist
+ios keychain dump
+ios cookies get
+ios nsuserdefaults get
+ios nsurlcredentialstorage dump
+
+<span class="comment"># SSL pinning bypass</span>
+ios sslpinning disable
+
+<span class="comment"># Jailbreak detection bypass</span>
+ios jailbreak disable
+
+<span class="comment"># File system</span>
+env  <span class="comment"># Show app paths</span>
+ls
+file download /path/to/file ./
+
+<span class="comment"># Hooking</span>
+ios hooking list classes
+ios hooking list class_methods ClassName
+ios hooking watch method "-[ClassName methodName]" --dump-args --dump-return
+
+<span class="comment"># Memory</span>
+memory dump all output.bin
+memory search "password"</pre>
+                    </div>
+                </div>
+            </section>
+
+            <section id="frida" class="section">
+                <h2 class="section-title">🪝 Frida Scripts</h2>
+                
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-title">Frida Basics</span>
+                        <span class="code-tag tag-frida">Frida</span>
+                    </div>
+                    <div class="code-content">
+<pre><span class="comment"># Install Frida</span>
+pip install frida-tools
+
+<span class="comment"># List processes</span>
+frida-ps -U  <span class="comment"># USB device</span>
+frida-ps -Ua  <span class="comment"># Running apps</span>
+
+<span class="comment"># Spawn and attach</span>
+frida -U -f com.target.app -l script.js --no-pause
+frida -U com.target.app -l script.js  <span class="comment"># Attach to running</span>
+
+<span class="comment"># Objection with Frida</span>
+objection -g com.target.app explore
+
+<span class="comment"># Frida-trace</span>
+frida-trace -U -i "open*" com.target.app
+frida-trace -U -m "*[* password*]" com.target.app</pre>
+                    </div>
+                </div>
+
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-title">Android Frida Scripts</span>
+                        <span class="code-tag tag-frida">Frida</span>
+                    </div>
+                    <div class="code-content">
+<pre><span class="comment">// Hook Java method</span>
+Java.perform(function() {
+    var targetClass = Java.use("com.target.app.LoginActivity");
+    targetClass.checkPassword.implementation = function(password) {
+        console.log("Password: " + password);
+        return this.checkPassword(password);
+    };
+});
+
+<span class="comment">// Bypass root detection</span>
+Java.perform(function() {
+    var RootCheck = Java.use("com.target.app.RootDetection");
+    RootCheck.isRooted.implementation = function() {
+        console.log("Root check bypassed");
+        return false;
+    };
+});
+
+<span class="comment">// Hook all overloads</span>
+Java.perform(function() {
+    var targetClass = Java.use("com.target.app.Crypto");
+    targetClass.encrypt.overloads.forEach(function(overload) {
+        overload.implementation = function() {
+            console.log("encrypt called with: " + JSON.stringify(arguments));
+            return overload.apply(this, arguments);
+        };
+    });
+});
+
+<span class="comment">// Enumerate loaded classes</span>
+Java.perform(function() {
+    Java.enumerateLoadedClasses({
+        onMatch: function(className) {
+            if (className.includes("target")) {
+                console.log(className);
+            }
+        },
+        onComplete: function() {}
+    });
+});</pre>
+                    </div>
+                </div>
+
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-title">iOS Frida Scripts</span>
+                        <span class="code-tag tag-frida">Frida</span>
+                    </div>
+                    <div class="code-content">
+<pre><span class="comment">// Hook Objective-C method</span>
+var className = "LoginViewController";
+var methodName = "- validatePassword:";
+var hook = ObjC.classes[className][methodName];
+Interceptor.attach(hook.implementation, {
+    onEnter: function(args) {
+        console.log("Password: " + ObjC.Object(args[2]).toString());
+    },
+    onLeave: function(retval) {
+        console.log("Return: " + retval);
+    }
+});
+
+<span class="comment">// Bypass jailbreak detection</span>
+var paths = ["/Applications/Cydia.app", "/bin/bash", "/usr/sbin/sshd"];
+Interceptor.attach(Module.findExportByName(null, "fopen"), {
+    onEnter: function(args) {
+        var path = Memory.readUtf8String(args[0]);
+        if (paths.indexOf(path) !== -1) {
+            Memory.writeUtf8String(args[0], "/notexist");
+        }
+    }
+});
+
+<span class="comment">// Hook NSURLSession</span>
+var NSURLSession = ObjC.classes.NSURLSession;
+Interceptor.attach(NSURLSession["- dataTaskWithRequest:completionHandler:"].implementation, {
+    onEnter: function(args) {
+        var request = ObjC.Object(args[2]);
+        console.log("URL: " + request.URL().absoluteString());
+    }
+});</pre>
+                    </div>
+                </div>
+            </section>
+
+            <section id="ssl" class="section">
+                <h2 class="section-title">🔒 SSL Pinning Bypass</h2>
+                
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-title">Android SSL Bypass</span>
+                        <span class="code-tag tag-ssl">SSL</span>
+                    </div>
+                    <div class="code-content">
+<pre><span class="comment"># Objection</span>
+objection -g com.target.app explore
+android sslpinning disable
+
+<span class="comment"># Frida script (universal)</span>
+frida -U -f com.target.app -l ssl-bypass.js --no-pause
+
+<span class="comment"># Frida Codeshare</span>
+frida --codeshare pcipolloni/universal-android-ssl-pinning-bypass-with-frida -U -f com.target.app
+
+<span class="comment"># Patch APK with apk-mitm</span>
+npx apk-mitm app.apk
+
+<span class="comment"># Manual: Modify network_security_config.xml</span>
+&lt;network-security-config&gt;
+    &lt;base-config&gt;
+        &lt;trust-anchors&gt;
+            &lt;certificates src="user"/&gt;
+            &lt;certificates src="system"/&gt;
+        &lt;/trust-anchors&gt;
+    &lt;/base-config&gt;
+&lt;/network-security-config&gt;
+
+<span class="comment"># Repackage and sign</span>
+apktool b output_dir/ -o new.apk
+keytool -genkey -v -keystore my.keystore -alias mykey -keyalg RSA -keysize 2048 -validity 10000
+jarsigner -verbose -sigalg SHA1withRSA -digestalg SHA1 -keystore my.keystore new.apk mykey
+zipalign -v 4 new.apk aligned.apk</pre>
+                    </div>
+                </div>
+
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-title">iOS SSL Bypass</span>
+                        <span class="code-tag tag-ssl">SSL</span>
+                    </div>
+                    <div class="code-content">
+<pre><span class="comment"># Objection</span>
+objection -g com.target.app explore
+ios sslpinning disable
+
+<span class="comment"># SSL Kill Switch 2 (Cydia)</span>
+<span class="comment"># Install from Cydia, enable in Settings</span>
+
+<span class="comment"># Frida script</span>
+frida -U -f com.target.app -l ios-ssl-bypass.js --no-pause
+
+<span class="comment"># Frida Codeshare</span>
+frida --codeshare dki/ios10-ssl-bypass -U -f com.target.app
+
+<span class="comment"># Manual Frida SSL bypass script</span>
+var resolver = new ApiResolver('objc');
+resolver.enumerateMatches('*[* URLSession:didReceiveChallenge:completionHandler:]', {
+    onMatch: function(match) {
+        Interceptor.attach(match.address, {
+            onEnter: function(args) {
+                var dominated = ObjC.Object(args[4]);
+                var dominated_handle = dominated.handle;
+                var completion = new ObjC.Block(dominated_handle);
+                completion.implementation(0, null);
+            }
+        });
+    }
+});</pre>
+                    </div>
+                </div>
+            </section>
+
+            <section id="root" class="section">
+                <h2 class="section-title">🔓 Root/Jailbreak Detection Bypass</h2>
+                
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-title">Android Root Bypass</span>
+                        <span class="code-tag tag-android">Android</span>
+                    </div>
+                    <div class="code-content">
+<pre><span class="comment"># Objection</span>
+android root disable
+
+<span class="comment"># Magisk Hide</span>
+<span class="comment"># Magisk Manager → Settings → Magisk Hide → Select app</span>
+
+<span class="comment"># Frida script - File-based detection</span>
+Java.perform(function() {
+    var File = Java.use("java.io.File");
+    File.exists.implementation = function() {
+        var path = this.getAbsolutePath();
+        var rootPaths = ["/system/app/Superuser.apk", "/sbin/su", "/system/bin/su",
+                         "/system/xbin/su", "/data/local/xbin/su", "/data/local/bin/su"];
+        if (rootPaths.indexOf(path) !== -1) {
+            return false;
+        }
+        return this.exists();
+    };
+});
+
+<span class="comment"># Frida script - Package-based detection</span>
+Java.perform(function() {
+    var PM = Java.use("android.app.ApplicationPackageManager");
+    PM.getPackageInfo.overload("java.lang.String", "int").implementation = function(pkg, flags) {
+        var rootPkgs = ["com.topjohnwu.magisk", "eu.chainfire.supersu"];
+        if (rootPkgs.indexOf(pkg) !== -1) {
+            throw Java.use("android.content.pm.PackageManager$NameNotFoundException").$new();
+        }
+        return this.getPackageInfo(pkg, flags);
+    };
+});</pre>
+                    </div>
+                </div>
+
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-title">iOS Jailbreak Bypass</span>
+                        <span class="code-tag tag-ios">iOS</span>
+                    </div>
+                    <div class="code-content">
+<pre><span class="comment"># Objection</span>
+ios jailbreak disable
+
+<span class="comment"># Liberty Lite (Cydia)</span>
+<span class="comment"># Install from Cydia, select app in settings</span>
+
+<span class="comment"># Shadow (Cydia)</span>
+<span class="comment"># More advanced jailbreak bypass</span>
+
+<span class="comment"># A-Bypass</span>
+
+<span class="comment"># Frida script - File-based detection</span>
+var jailbreakPaths = [
+    "/Applications/Cydia.app",
+    "/Library/MobileSubstrate/MobileSubstrate.dylib",
+    "/bin/bash",
+    "/usr/sbin/sshd",
+    "/etc/apt",
+    "/private/var/lib/apt/"
+];
+
+Interceptor.attach(Module.findExportByName(null, "fopen"), {
+    onEnter: function(args) {
+        var path = Memory.readUtf8String(args[0]);
+        if (jailbreakPaths.some(jp => path.includes(jp))) {
+            Memory.writeUtf8String(args[0], "/nonexistent");
+        }
+    }
+});
+
+<span class="comment"># Hook canOpenURL</span>
+var UIApplication = ObjC.classes.UIApplication;
+Interceptor.attach(UIApplication["- canOpenURL:"].implementation, {
+    onEnter: function(args) {
+        var url = ObjC.Object(args[2]).toString();
+        if (url.includes("cydia")) {
+            args[2] = ObjC.classes.NSURL.URLWithString_("http://localhost");
+        }
+    }
+});</pre>
+                    </div>
+                </div>
+            </section>
+
+            <section id="storage" class="section">
+                <h2 class="section-title">💾 Data Storage Analysis</h2>
+                
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-title">Android Data Storage</span>
+                        <span class="code-tag tag-android">Android</span>
+                    </div>
+                    <div class="code-content">
+<pre><span class="comment"># App data location</span>
+/data/data/com.target.app/
+├── shared_prefs/       <span class="comment"># XML preference files</span>
+├── databases/          <span class="comment"># SQLite databases</span>
+├── files/              <span class="comment"># Internal files</span>
+├── cache/              <span class="comment"># Cache files</span>
+└── lib/                <span class="comment"># Native libraries</span>
+
+<span class="comment"># External storage</span>
+/sdcard/Android/data/com.target.app/
+
+<span class="comment"># Analyze shared preferences</span>
+adb shell run-as com.target.app cat shared_prefs/*.xml
+
+<span class="comment"># Analyze databases</span>
+adb shell run-as com.target.app sqlite3 databases/app.db ".dump"
+
+<span class="comment"># ADB backup (if allowBackup=true)</span>
+adb backup -f backup.ab com.target.app
+java -jar abe.jar unpack backup.ab backup.tar</pre>
+                    </div>
+                </div>
+
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-title">iOS Data Storage</span>
+                        <span class="code-tag tag-ios">iOS</span>
+                    </div>
+                    <div class="code-content">
+<pre><span class="comment"># App container locations</span>
+/var/mobile/Containers/Bundle/Application/UUID/   <span class="comment"># App bundle</span>
+/var/mobile/Containers/Data/Application/UUID/     <span class="comment"># App data</span>
+├── Documents/
+├── Library/
+│   ├── Preferences/    <span class="comment"># Plist files</span>
+│   ├── Caches/
+│   └── Cookies/
+└── tmp/
+
+<span class="comment"># Objection file commands</span>
+env                     <span class="comment"># Show paths</span>
+ls Documents/
+file download Documents/data.db ./
+
+<span class="comment"># Keychain dump</span>
+ios keychain dump
+
+<span class="comment"># NSUserDefaults</span>
+ios nsuserdefaults get
+
+<span class="comment"># Plist files</span>
+ios plist cat Library/Preferences/com.target.app.plist
+
+<span class="comment"># SQLite databases</span>
+sqlite3 Library/Caches/app.db ".dump"</pre>
+                    </div>
+                </div>
+            </section>
+
+            <section id="tools" class="section">
+                <h2 class="section-title">🛠️ Mobile Testing Tools</h2>
+                
+                <div class="info-box">
+                    <div class="info-box-title">Essential Tools</div>
+                    <p><strong>Android:</strong> apktool, jadx, Frida, objection, Drozer, MobSF, Ghidra<br>
+                    <strong>iOS:</strong> class-dump, Frida, objection, Hopper, MobSF, Ghidra, Cycript<br>
+                    <strong>Proxy:</strong> Burp Suite, mitmproxy, Charles Proxy</p>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <footer>
+        <p>&lt;maeitsec/&gt; | Mobile Security Testing Cheatsheet</p>
+    </footer>
+
+    <script>
+        function copyCode(btn){const block=btn.closest('.code-block');const code=block.querySelector('pre').textContent;navigator.clipboard.writeText(code);btn.textContent='Copied!';setTimeout(()=>btn.textContent='Copy',2000);}
+    </script>
+</body>
+</html>
