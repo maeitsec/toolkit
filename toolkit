@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>maeitsec | Senior Penetration Tester</title>
+    <meta name="description" content="Mheljun Enanoria - Senior Penetration Tester, CVE Researcher, Security Consultant">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0a0a0f;
+            --bg-secondary: #12121a;
+            --bg-tertiary: #1a1a24;
+            --accent: #00ff88;
+            --accent-dim: #00cc6a;
+            --accent-glow: rgba(0, 255, 136, 0.15);
+            --text-primary: #e4e4e7;
+            --text-secondary: #a1a1aa;
+            --text-muted: #71717a;
+            --border: #27272a;
+            --red: #ff4757;
+            --yellow: #ffa502;
+            --blue: #3b82f6;
+            --purple: #a855f7;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+        .mono { font-family: 'JetBrains Mono', monospace; }
+        
+        /* Matrix Rain Background */
+        #matrix-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            opacity: 0.03;
+        }
+        
+        /* Navigation */
+        nav {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            padding: 1rem 2rem;
+            background: rgba(10, 10, 15, 0.9);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border);
+            z-index: 1000;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .logo {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--accent);
+            text-decoration: none;
+        }
+        .logo span { color: var(--text-primary); }
+        .nav-links { display: flex; gap: 2rem; }
+        .nav-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: color 0.3s;
+        }
+        .nav-links a:hover { color: var(--accent); }
+        
+        /* Hero Section */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            padding: 6rem 2rem 4rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .hero-content { max-width: 800px; }
+        .hero-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: var(--accent-glow);
+            border: 1px solid var(--accent-dim);
+            border-radius: 50px;
+            font-size: 0.85rem;
+            color: var(--accent);
+            margin-bottom: 1.5rem;
+        }
+        .hero-tag::before { content: '●'; animation: blink 1s infinite; }
+        @keyframes blink { 50% { opacity: 0.3; } }
+        .hero h1 {
+            font-size: clamp(2.5rem, 6vw, 4rem);
+            font-weight: 700;
+            margin-bottom: 1rem;
+            line-height: 1.1;
+        }
+        .hero h1 .accent { color: var(--accent); }
+        .hero-subtitle {
+            font-size: 1.25rem;
+            color: var(--text-secondary);
+            margin-bottom: 2rem;
+            max-width: 600px;
+        }
+        .certs {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            margin-bottom: 2rem;
+        }
+        .cert {
+            padding: 0.4rem 0.8rem;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+        .cert.highlight {
+            border-color: var(--accent-dim);
+            color: var(--accent);
+            background: var(--accent-glow);
+        }
+        .hero-buttons { display: flex; gap: 1rem; flex-wrap: wrap; }
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 500;
+            text-decoration: none;
+            transition: all 0.3s;
+            font-size: 0.95rem;
+        }
+        .btn-primary {
+            background: var(--accent);
+            color: var(--bg-primary);
+        }
+        .btn-primary:hover {
+            background: var(--accent-dim);
+            box-shadow: 0 0 30px var(--accent-glow);
+        }
+        .btn-secondary {
+            background: transparent;
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+        }
+        .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+        
+        /* Section Styles */
+        section {
+            padding: 5rem 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 3rem;
+        }
+        .section-header h2 {
+            font-size: 1.75rem;
+            font-weight: 600;
+        }
+        .section-header::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: linear-gradient(90deg, var(--border), transparent);
+        }
+        .section-num {
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--accent);
+            font-size: 0.9rem;
+        }
+        
+        /* Cheatsheets Grid */
+        .cheatsheets-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+        .cheatsheet-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            transition: all 0.3s;
+            cursor: pointer;
+            text-decoration: none;
+            color: inherit;
+        }
+        .cheatsheet-card:hover {
+            border-color: var(--accent-dim);
+            transform: translateY(-4px);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+        }
+        .cheatsheet-icon {
+            width: 48px;
+            height: 48px;
+            background: var(--accent-glow);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+        }
+        .cheatsheet-card h3 {
+            font-size: 1.1rem;
+            margin-bottom: 0.5rem;
+        }
+        .cheatsheet-card p {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin-bottom: 1rem;
+        }
+        .cheatsheet-tags { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+        .cheatsheet-tag {
+            padding: 0.25rem 0.5rem;
+            background: var(--bg-tertiary);
+            border-radius: 4px;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            font-family: 'JetBrains Mono', monospace;
+        }
+        
+        /* CVE Section */
+        .cve-list { display: flex; flex-direction: column; gap: 1rem; }
+        .cve-item {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            padding: 1.25rem 1.5rem;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            transition: all 0.3s;
+        }
+        .cve-item:hover { border-color: var(--red); }
+        .cve-id {
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--red);
+            font-weight: 600;
+            white-space: nowrap;
+        }
+        .cve-info { flex: 1; }
+        .cve-title { font-weight: 500; margin-bottom: 0.25rem; }
+        .cve-desc { font-size: 0.9rem; color: var(--text-secondary); }
+        .cve-severity {
+            padding: 0.25rem 0.75rem;
+            border-radius: 50px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        .severity-critical { background: rgba(255, 71, 87, 0.2); color: var(--red); }
+        .severity-high { background: rgba(255, 165, 2, 0.2); color: var(--yellow); }
+        .severity-medium { background: rgba(59, 130, 246, 0.2); color: var(--blue); }
+        
+        /* Skills */
+        .skills-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+        }
+        .skill-category {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+        }
+        .skill-category h3 {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 1rem;
+            margin-bottom: 1rem;
+            color: var(--accent);
+        }
+        .skill-items { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+        .skill-item {
+            padding: 0.4rem 0.8rem;
+            background: var(--bg-tertiary);
+            border-radius: 6px;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+        
+        /* Contact */
+        .contact-links {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+        .contact-link {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 1rem 1.5rem;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            text-decoration: none;
+            color: var(--text-primary);
+            transition: all 0.3s;
+        }
+        .contact-link:hover {
+            border-color: var(--accent);
+            background: var(--accent-glow);
+        }
+        .contact-icon { font-size: 1.25rem; }
+        
+        /* Footer */
+        footer {
+            text-align: center;
+            padding: 3rem 2rem;
+            border-top: 1px solid var(--border);
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+        footer .mono { color: var(--accent); }
+        
+        /* Terminal Block */
+        .terminal {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+            margin-top: 2rem;
+        }
+        .terminal-header {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1rem;
+            background: var(--bg-tertiary);
+            border-bottom: 1px solid var(--border);
+        }
+        .terminal-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+        .terminal-dot.red { background: #ff5f57; }
+        .terminal-dot.yellow { background: #febc2e; }
+        .terminal-dot.green { background: #28c840; }
+        .terminal-body {
+            padding: 1.25rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+            line-height: 1.8;
+        }
+        .terminal-line { display: flex; gap: 0.75rem; }
+        .terminal-prompt { color: var(--accent); }
+        .terminal-cmd { color: var(--text-primary); }
+        .terminal-output { color: var(--text-secondary); margin-left: 1.5rem; }
+        
+        /* Mobile */
+        @media (max-width: 768px) {
+            .nav-links { display: none; }
+            .hero { padding-top: 5rem; }
+            .cve-item { flex-direction: column; align-items: flex-start; gap: 0.75rem; }
+        }
+    </style>
+</head>
+<body>
+    <canvas id="matrix-bg"></canvas>
+    
+    <nav>
+        <a href="#" class="logo">&lt;<span>maeitsec</span>/&gt;</a>
+        <div class="nav-links">
+            <a href="#about">About</a>
+            <a href="#cheatsheets">Cheatsheets</a>
+            <a href="#cves">CVEs</a>
+            <a href="#skills">Skills</a>
+            <a href="#contact">Contact</a>
+        </div>
+    </nav>
+
+    <section class="hero">
+        <div class="hero-content">
+            <div class="hero-tag">Available for Security Consulting</div>
+            <h1>Hi, I'm <span class="accent">Mheljun Enanoria</span></h1>
+            <p class="hero-subtitle">Senior Penetration Tester & CVE Researcher specializing in Web, API, Mobile, Active Directory, and Cloud Security Assessments.</p>
+            <div class="certs">
+                <span class="cert highlight">OSCP</span>
+                <span class="cert highlight">OSWE</span>
+                <span class="cert">CRTO</span>
+                <span class="cert">CRTP</span>
+                <span class="cert">CBBH</span>
+                <span class="cert">CWES</span>
+                <span class="cert">eMAPT</span>
+                <span class="cert">HTB CAPE</span>
+            </div>
+            <div class="hero-buttons">
+                <a href="#cheatsheets" class="btn btn-primary">📚 View Cheatsheets</a>
+                <a href="https://medium.com/@maeitsec" class="btn btn-secondary" target="_blank">📝 Read Blog</a>
+            </div>
+            
+            <div class="terminal">
+                <div class="terminal-header">
+                    <span class="terminal-dot red"></span>
+                    <span class="terminal-dot yellow"></span>
+                    <span class="terminal-dot green"></span>
+                </div>
+                <div class="terminal-body">
+                    <div class="terminal-line">
+                        <span class="terminal-prompt">$</span>
+                        <span class="terminal-cmd">whoami</span>
+                    </div>
+                    <div class="terminal-output">Senior Penetration Tester @ Deltek</div>
+                    <div class="terminal-line">
+                        <span class="terminal-prompt">$</span>
+                        <span class="terminal-cmd">cat /etc/experience</span>
+                    </div>
+                    <div class="terminal-output">8+ years in IT Security | VAPT | Red Team Ops</div>
+                    <div class="terminal-line">
+                        <span class="terminal-prompt">$</span>
+                        <span class="terminal-cmd">ls ./specializations/</span>
+                    </div>
+                    <div class="terminal-output">webapp/ api/ mobile/ ad/ cloud/ thick-client/</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="cheatsheets">
+        <div class="section-header">
+            <span class="section-num">01.</span>
+            <h2>Cheatsheets</h2>
+        </div>
+        <div class="cheatsheets-grid">
+            <a href="cheatsheets/web-app.html" class="cheatsheet-card">
+                <div class="cheatsheet-icon">🌐</div>
+                <h3>Web Application Testing</h3>
+                <p>XSS, SQLi, SSRF, IDOR, Auth Bypass, Business Logic, and more.</p>
+                <div class="cheatsheet-tags">
+                    <span class="cheatsheet-tag">OWASP</span>
+                    <span class="cheatsheet-tag">Burp Suite</span>
+                    <span class="cheatsheet-tag">SQLMap</span>
+                </div>
+            </a>
+            <a href="cheatsheets/api.html" class="cheatsheet-card">
+                <div class="cheatsheet-icon">🔌</div>
+                <h3>API Security Testing</h3>
+                <p>REST, GraphQL, SOAP testing methodologies and common vulnerabilities.</p>
+                <div class="cheatsheet-tags">
+                    <span class="cheatsheet-tag">REST</span>
+                    <span class="cheatsheet-tag">GraphQL</span>
+                    <span class="cheatsheet-tag">JWT</span>
+                </div>
+            </a>
+            <a href="cheatsheets/mobile.html" class="cheatsheet-card">
+                <div class="cheatsheet-icon">📱</div>
+                <h3>Mobile Security</h3>
+                <p>iOS & Android testing, jailbreak detection bypass, static & dynamic analysis.</p>
+                <div class="cheatsheet-tags">
+                    <span class="cheatsheet-tag">Frida</span>
+                    <span class="cheatsheet-tag">Objection</span>
+                    <span class="cheatsheet-tag">MobSF</span>
+                </div>
+            </a>
+            <a href="cheatsheets/active-directory.html" class="cheatsheet-card">
+                <div class="cheatsheet-icon">🏢</div>
+                <h3>Active Directory</h3>
+                <p>AD enumeration, Kerberoasting, AS-REP Roasting, delegation attacks.</p>
+                <div class="cheatsheet-tags">
+                    <span class="cheatsheet-tag">BloodHound</span>
+                    <span class="cheatsheet-tag">Rubeus</span>
+                    <span class="cheatsheet-tag">Mimikatz</span>
+                </div>
+            </a>
+            <a href="cheatsheets/network.html" class="cheatsheet-card">
+                <div class="cheatsheet-icon">🔒</div>
+                <h3>Network Penetration</h3>
+                <p>Network enumeration, pivoting, tunneling, and post-exploitation.</p>
+                <div class="cheatsheet-tags">
+                    <span class="cheatsheet-tag">Nmap</span>
+                    <span class="cheatsheet-tag">Chisel</span>
+                    <span class="cheatsheet-tag">Ligolo</span>
+                </div>
+            </a>
+            <a href="cheatsheets/thick-client.html" class="cheatsheet-card">
+                <div class="cheatsheet-icon">🖥️</div>
+                <h3>Thick Client Testing</h3>
+                <p>.NET, Java application analysis, DLL hijacking, memory manipulation.</p>
+                <div class="cheatsheet-tags">
+                    <span class="cheatsheet-tag">dnSpy</span>
+                    <span class="cheatsheet-tag">Process Monitor</span>
+                    <span class="cheatsheet-tag">Echo Mirage</span>
+                </div>
+            </a>
+            <a href="cheatsheets/cloud.html" class="cheatsheet-card">
+                <div class="cheatsheet-icon">☁️</div>
+                <h3>Cloud Security</h3>
+                <p>AWS, Azure, GCP misconfigurations and exploitation techniques.</p>
+                <div class="cheatsheet-tags">
+                    <span class="cheatsheet-tag">AWS</span>
+                    <span class="cheatsheet-tag">Azure</span>
+                    <span class="cheatsheet-tag">ScoutSuite</span>
+                </div>
+            </a>
+            <a href="cheatsheets/privesc.html" class="cheatsheet-card">
+                <div class="cheatsheet-icon">⬆️</div>
+                <h3>Privilege Escalation</h3>
+                <p>Windows & Linux privesc vectors, enumeration scripts, and techniques.</p>
+                <div class="cheatsheet-tags">
+                    <span class="cheatsheet-tag">WinPEAS</span>
+                    <span class="cheatsheet-tag">LinPEAS</span>
+                    <span class="cheatsheet-tag">GTFOBins</span>
+                </div>
+            </a>
+        </div>
+    </section>
+
+    <section id="cves">
+        <div class="section-header">
+            <span class="section-num">02.</span>
+            <h2>Published CVEs</h2>
+        </div>
+        <div class="cve-list">
+            <div class="cve-item">
+                <span class="cve-id">CVE-2024-XXXXX</span>
+                <div class="cve-info">
+                    <div class="cve-title">SQL Injection in [Product Name]</div>
+                    <div class="cve-desc">Authenticated SQL injection leading to data exfiltration</div>
+                </div>
+                <span class="cve-severity severity-high">High</span>
+            </div>
+            <div class="cve-item">
+                <span class="cve-id">CVE-2024-XXXXX</span>
+                <div class="cve-info">
+                    <div class="cve-title">Authentication Bypass in [Product Name]</div>
+                    <div class="cve-desc">Critical authentication bypass allowing unauthorized access</div>
+                </div>
+                <span class="cve-severity severity-critical">Critical</span>
+            </div>
+            <div class="cve-item">
+                <span class="cve-id">CVE-2023-XXXXX</span>
+                <div class="cve-info">
+                    <div class="cve-title">Stored XSS in [Product Name]</div>
+                    <div class="cve-desc">Stored cross-site scripting in admin panel</div>
+                </div>
+                <span class="cve-severity severity-medium">Medium</span>
+            </div>
+        </div>
+        <p style="margin-top: 1.5rem; color: var(--text-muted); font-size: 0.9rem;">
+            * Replace with your actual CVE details. View all disclosures on 
+            <a href="https://medium.com/@maeitsec" style="color: var(--accent);">Medium</a>.
+        </p>
+    </section>
+
+    <section id="skills">
+        <div class="section-header">
+            <span class="section-num">03.</span>
+            <h2>Skills & Tools</h2>
+        </div>
+        <div class="skills-grid">
+            <div class="skill-category">
+                <h3>🔴 Offensive Security</h3>
+                <div class="skill-items">
+                    <span class="skill-item">Web App Pentesting</span>
+                    <span class="skill-item">API Security</span>
+                    <span class="skill-item">Mobile (iOS/Android)</span>
+                    <span class="skill-item">Active Directory</span>
+                    <span class="skill-item">Cloud Security</span>
+                    <span class="skill-item">Thick Client</span>
+                    <span class="skill-item">Network Pentesting</span>
+                    <span class="skill-item">Wireless Security</span>
+                </div>
+            </div>
+            <div class="skill-category">
+                <h3>🛠️ Tools</h3>
+                <div class="skill-items">
+                    <span class="skill-item">Burp Suite</span>
+                    <span class="skill-item">Nmap</span>
+                    <span class="skill-item">Metasploit</span>
+                    <span class="skill-item">BloodHound</span>
+                    <span class="skill-item">Frida</span>
+                    <span class="skill-item">Cobalt Strike</span>
+                    <span class="skill-item">Nuclei</span>
+                    <span class="skill-item">AttackForge</span>
+                </div>
+            </div>
+            <div class="skill-category">
+                <h3>💻 Development</h3>
+                <div class="skill-items">
+                    <span class="skill-item">Python</span>
+                    <span class="skill-item">Bash</span>
+                    <span class="skill-item">PowerShell</span>
+                    <span class="skill-item">JavaScript</span>
+                    <span class="skill-item">C#</span>
+                    <span class="skill-item">SQL</span>
+                </div>
+            </div>
+            <div class="skill-category">
+                <h3>📋 Frameworks</h3>
+                <div class="skill-items">
+                    <span class="skill-item">OWASP Top 10</span>
+                    <span class="skill-item">OWASP ASVS</span>
+                    <span class="skill-item">OWASP MASVS</span>
+                    <span class="skill-item">PTES</span>
+                    <span class="skill-item">NIST</span>
+                    <span class="skill-item">MITRE ATT&CK</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="contact">
+        <div class="section-header">
+            <span class="section-num">04.</span>
+            <h2>Get In Touch</h2>
+        </div>
+        <p style="color: var(--text-secondary); margin-bottom: 2rem; max-width: 600px;">
+            Interested in security assessments, consulting, or just want to connect? 
+            Feel free to reach out through any of the platforms below.
+        </p>
+        <div class="contact-links">
+            <a href="https://github.com/maeitsec" class="contact-link" target="_blank">
+                <span class="contact-icon">📂</span>
+                <span>GitHub</span>
+            </a>
+            <a href="https://linkedin.com/in/maeitsec" class="contact-link" target="_blank">
+                <span class="contact-icon">💼</span>
+                <span>LinkedIn</span>
+            </a>
+            <a href="https://medium.com/@maeitsec" class="contact-link" target="_blank">
+                <span class="contact-icon">📝</span>
+                <span>Medium</span>
+            </a>
+            <a href="mailto:contact@maeitsec.com" class="contact-link">
+                <span class="contact-icon">📧</span>
+                <span>Email</span>
+            </a>
+        </div>
+    </section>
+
+    <footer>
+        <p>Designed & Built by <span class="mono">maeitsec</span> © 2024</p>
+        <p style="margin-top: 0.5rem; font-size: 0.8rem;">Hack the planet. Responsibly.</p>
+    </footer>
+
+    <script>
+        // Matrix Rain Effect
+        const canvas = document.getElementById('matrix-bg');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        const chars = 'アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン0123456789';
+        const fontSize = 14;
+        const columns = canvas.width / fontSize;
+        const drops = Array(Math.floor(columns)).fill(1);
+        
+        function drawMatrix() {
+            ctx.fillStyle = 'rgba(10, 10, 15, 0.05)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#00ff88';
+            ctx.font = fontSize + 'px monospace';
+            for (let i = 0; i < drops.length; i++) {
+                const text = chars[Math.floor(Math.random() * chars.length)];
+                ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+                if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) drops[i] = 0;
+                drops[i]++;
+            }
+        }
+        setInterval(drawMatrix, 50);
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+    </script>
+</body>
+</html>
