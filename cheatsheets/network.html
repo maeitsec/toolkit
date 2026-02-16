@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Network Penetration Testing Cheatsheet | maeitsec</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root{--bg-primary:#0a0a0f;--bg-secondary:#12121a;--bg-tertiary:#1a1a24;--accent:#00ff88;--accent-dim:#00cc6a;--accent-glow:rgba(0,255,136,0.15);--text-primary:#e4e4e7;--text-secondary:#a1a1aa;--text-muted:#71717a;--border:#27272a;--red:#ff4757;--yellow:#ffa502;--blue:#3b82f6;--purple:#a855f7;--orange:#f97316}*{margin:0;padding:0;box-sizing:border-box}html{scroll-behavior:smooth}body{font-family:'Inter',sans-serif;background:var(--bg-primary);color:var(--text-primary);line-height:1.6}nav{position:fixed;top:0;width:100%;padding:1rem 2rem;background:rgba(10,10,15,0.95);backdrop-filter:blur(10px);border-bottom:1px solid var(--border);z-index:1000;display:flex;justify-content:space-between;align-items:center}.logo{font-family:'JetBrains Mono',monospace;font-size:1.25rem;font-weight:700;color:var(--accent);text-decoration:none}.logo span{color:var(--text-primary)}.back-link{color:var(--text-secondary);text-decoration:none;font-size:0.9rem}.back-link:hover{color:var(--accent)}.container{max-width:1400px;margin:0 auto;padding:5rem 2rem 3rem;display:grid;grid-template-columns:250px 1fr;gap:3rem}.sidebar{position:sticky;top:5rem;height:fit-content}.sidebar-title{font-size:0.75rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-muted);margin-bottom:1rem}.sidebar-nav{list-style:none}.sidebar-nav li{margin-bottom:0.25rem}.sidebar-nav a{display:block;padding:0.5rem 1rem;color:var(--text-secondary);text-decoration:none;font-size:0.9rem;border-left:2px solid transparent}.sidebar-nav a:hover{color:var(--accent);border-left-color:var(--accent);background:var(--accent-glow)}.content{min-width:0}.page-header{margin-bottom:3rem;padding-bottom:2rem;border-bottom:1px solid var(--border)}.page-header h1{font-size:2.5rem;margin-bottom:0.5rem}.page-header p{color:var(--text-secondary);font-size:1.1rem}.section{margin-bottom:3rem;scroll-margin-top:5rem}.section-title{display:flex;align-items:center;gap:0.75rem;font-size:1.5rem;margin-bottom:1.5rem;color:var(--accent)}.section-title::after{content:'';flex:1;height:1px;background:var(--border)}.code-block{background:var(--bg-secondary);border:1px solid var(--border);border-radius:8px;margin-bottom:1.5rem;overflow:hidden}.code-header{display:flex;justify-content:space-between;align-items:center;padding:0.75rem 1rem;background:var(--bg-tertiary);border-bottom:1px solid var(--border)}.code-title{font-size:0.85rem;color:var(--text-secondary);font-weight:500}.code-tag{font-size:0.7rem;padding:0.2rem 0.5rem;border-radius:4px;font-family:'JetBrains Mono',monospace}.tag-scan{background:rgba(0,255,136,0.2);color:var(--accent)}.tag-exploit{background:rgba(255,71,87,0.2);color:var(--red)}.tag-pivot{background:rgba(168,85,247,0.2);color:var(--purple)}.tag-sniff{background:rgba(255,165,2,0.2);color:var(--yellow)}.code-content{padding:1rem;overflow-x:auto}.code-content pre{font-family:'JetBrains Mono',monospace;font-size:0.85rem;line-height:1.6;color:var(--text-primary);white-space:pre-wrap;word-break:break-all}.code-content .comment{color:var(--text-muted)}.copy-btn{background:var(--bg-tertiary);border:1px solid var(--border);color:var(--text-secondary);padding:0.3rem 0.6rem;border-radius:4px;font-size:0.75rem;cursor:pointer}.copy-btn:hover{background:var(--accent);color:var(--bg-primary)}footer{text-align:center;padding:2rem;border-top:1px solid var(--border);color:var(--text-muted);font-size:0.85rem}@media(max-width:900px){.container{grid-template-columns:1fr;padding-top:4rem}.sidebar{display:none}}
+    </style>
+</head>
+<body>
+    <nav>
+        <a href="../index.html" class="logo">&lt;<span>maeitsec</span>/&gt;</a>
+        <a href="../index.html#cheatsheets" class="back-link">← Back to Cheatsheets</a>
+    </nav>
+
+    <div class="container">
+        <aside class="sidebar">
+            <div class="sidebar-title">On This Page</div>
+            <ul class="sidebar-nav">
+                <li><a href="#recon">Host Discovery</a></li>
+                <li><a href="#nmap">Nmap Scanning</a></li>
+                <li><a href="#services">Service Enumeration</a></li>
+                <li><a href="#smb">SMB Attacks</a></li>
+                <li><a href="#dns">DNS Attacks</a></li>
+                <li><a href="#snmp">SNMP</a></li>
+                <li><a href="#mitm">MITM Attacks</a></li>
+                <li><a href="#pivoting">Pivoting & Tunneling</a></li>
+                <li><a href="#shells">Reverse Shells</a></li>
+                <li><a href="#filetransfer">File Transfer</a></li>
+            </ul>
+        </aside>
+
+        <main class="content">
+            <header class="page-header">
+                <h1>🌐 Network Penetration Testing</h1>
+                <p>Comprehensive cheatsheet for internal and external network penetration testing.</p>
+            </header>
+
+            <section id="recon" class="section">
+                <h2 class="section-title">🔍 Host Discovery</h2>
+                
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-title">Network Discovery</span>
+                        <span class="code-tag tag-scan">Scan</span>
+                    </div>
+                    <div class="code-content">
+<pre><span class="comment"># Nmap host discovery</span>
+nmap -sn 192.168.1.0/24                  <span class="comment"># Ping sweep</span>
+nmap -sn -PS22,80,443 192.168.1.0/24     <span class="comment"># TCP SYN ping</span>
+nmap -sn -PA80,443 192.168.1.0/24        <span class="comment"># TCP ACK ping</span>
+nmap -sn -PU53 192.168.1.0/24            <span class="comment"># UDP ping</span>
+
+<span class="comment"># Netdiscover (ARP)</span>
+netdiscover -r 192.168.1.0/24
+netdiscover -i eth0 -r 192.168.1.0/24
+
+<span class="comment"># ARP scan</span>
+arp-scan -l
+arp-scan 192.168.1.0/24
+
+<span class="comment"># fping</span>
+fping -a -g 192.168.1.0/24 2>/dev/null
+
+<span class="comment"># Masscan - Fast scanning</span>
+masscan 192.168.1.0/24 -p1-65535 --rate=1000
+
+<span class="comment"># Responder for passive discovery</span>
+responder -I eth0 -A  <span class="comment"># Analyze mode only</span></pre>
+                    </div>
+                </div>
+            </section>
+
+            <section id="nmap" class="section">
+                <h2 class="section-title">📡 Nmap Scanning</h2>
+                
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-title">Nmap Scan Types</span>
+                        <span class="code-tag tag-scan">Nmap</span>
+                    </div>
+                    <div class="code-content">
+<pre><span class="comment"># Basic scans</span>
+nmap -sT 192.168.1.1               <span class="comment"># TCP connect</span>
+nmap -sS 192.168.1.1               <span class="comment"># TCP SYN (stealth)</span>
+nmap -sU 192.168.1.1               <span class="comment"># UDP scan</span>
+nmap -sV 192.168.1.1               <span class="comment"># Version detection</span>
+nmap -sC 192.168.1.1               <span class="comment"># Default scripts</span>
+nmap -O 192.168.1.1                <span class="comment"># OS detection</span>
+nmap -A 192.168.1.1                <span class="comment"># Aggressive (OS, version, scripts, traceroute)</span>
+
+<span class="comment"># Port specification</span>
+nmap -p 22,80,443 192.168.1.1      <span class="comment"># Specific ports</span>
+nmap -p 1-1000 192.168.1.1         <span class="comment"># Port range</span>
+nmap -p- 192.168.1.1               <span class="comment"># All 65535 ports</span>
+nmap --top-ports 100 192.168.1.1
