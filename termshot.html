@@ -3,10 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TermShot | Terminal Screenshot Generator</title>
-    <meta name="description" content="Create beautiful terminal screenshots for your READMEs and social media">
+    <title>TermShot | Terminal Screenshot & GIF Generator</title>
+    <meta name="description" content="Create beautiful terminal screenshots and animated GIFs for your READMEs and social media">
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.js"></script>
     <style>
         :root {
             --bg-primary: #09090b;
@@ -14,6 +15,8 @@
             --bg-tertiary: #27272a;
             --accent: #22c55e;
             --accent-purple: #a855f7;
+            --accent-blue: #3b82f6;
+            --accent-orange: #f97316;
             --text: #fafafa;
             --text-muted: #71717a;
             --border: #3f3f46;
@@ -28,18 +31,25 @@
         }
         .container { max-width: 1400px; margin: 0 auto; padding: 2rem; }
         
-        /* Header */
         .header { text-align: center; margin-bottom: 3rem; }
         .header h1 { font-size: 3rem; font-weight: 700; margin-bottom: 0.5rem; }
         .header h1 .green { color: var(--accent); }
         .header h1 .purple { color: var(--accent-purple); }
         .header p { color: var(--text-muted); }
+        .header-badges { display: flex; justify-content: center; gap: 0.5rem; margin-top: 1rem; }
+        .badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 50px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        .badge-green { background: rgba(34,197,94,0.2); color: var(--accent); }
+        .badge-purple { background: rgba(168,85,247,0.2); color: var(--accent-purple); }
+        .badge-blue { background: rgba(59,130,246,0.2); color: var(--accent-blue); }
         
-        /* Layout */
         .layout { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; }
         @media (max-width: 1024px) { .layout { grid-template-columns: 1fr; } }
         
-        /* Cards */
         .card {
             background: var(--bg-secondary);
             border: 1px solid var(--border);
@@ -55,7 +65,6 @@
             margin-bottom: 1rem;
         }
         
-        /* Theme Grid */
         .theme-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.5rem; }
         .theme-btn {
             padding: 0.5rem;
@@ -70,7 +79,6 @@
         .theme-btn:hover { transform: scale(1.05); }
         .theme-btn.active { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(34,197,94,0.3); }
         
-        /* Form Elements */
         .form-group { margin-bottom: 1rem; }
         .form-label { display: block; font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.5rem; }
         .form-input, .form-select, .form-textarea {
@@ -89,15 +97,15 @@
         }
         .form-textarea {
             font-family: 'JetBrains Mono', monospace;
-            min-height: 200px;
+            min-height: 180px;
             resize: vertical;
         }
         
-        /* Range Slider */
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+        
         .range-slider { width: 100%; accent-color: var(--accent); }
         
-        /* Checkboxes */
-        .checkbox-group { display: flex; gap: 1.5rem; }
+        .checkbox-group { display: flex; gap: 1.5rem; flex-wrap: wrap; }
         .checkbox-label {
             display: flex;
             align-items: center;
@@ -107,25 +115,32 @@
         }
         .checkbox-label input { accent-color: var(--accent); }
         
-        /* Buttons */
-        .btn-group { display: flex; gap: 0.75rem; }
+        .btn-group { display: flex; gap: 0.75rem; flex-wrap: wrap; }
         .btn {
             flex: 1;
-            padding: 0.875rem 1.5rem;
+            min-width: 120px;
+            padding: 0.875rem 1rem;
             border: none;
             border-radius: 8px;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
         }
         .btn-primary { background: var(--accent-purple); color: white; }
         .btn-primary:hover { background: #9333ea; }
         .btn-success { background: var(--accent); color: black; }
         .btn-success:hover { background: #16a34a; }
+        .btn-blue { background: var(--accent-blue); color: white; }
+        .btn-blue:hover { background: #2563eb; }
+        .btn-orange { background: var(--accent-orange); color: white; }
+        .btn-orange:hover { background: #ea580c; }
         .btn:disabled { opacity: 0.5; cursor: not-allowed; }
         
-        /* Terminal Preview */
         .preview-area { position: sticky; top: 2rem; }
         .terminal-wrapper {
             border-radius: 12px;
@@ -167,18 +182,17 @@
         }
         @keyframes blink { 50% { opacity: 0; } }
         
-        /* Syntax Help */
         .syntax-help { font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; }
         .syntax-help p { margin-bottom: 0.25rem; }
         .syntax-help .yellow { color: #eab308; }
         .syntax-help .purple { color: var(--accent-purple); }
         .syntax-help .muted { color: var(--text-muted); }
         
-        /* Footer */
         .footer { text-align: center; margin-top: 3rem; color: var(--text-muted); font-size: 0.85rem; }
         .footer .green { color: var(--accent); }
+        .footer a { color: var(--accent); text-decoration: none; }
+        .footer a:hover { text-decoration: underline; }
         
-        /* Toast */
         .toast {
             position: fixed;
             bottom: 2rem;
@@ -191,27 +205,63 @@
             transform: translateY(100px);
             opacity: 0;
             transition: all 0.3s;
+            z-index: 1000;
         }
         .toast.show { transform: translateY(0); opacity: 1; }
+        
+        .progress-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.8);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+        }
+        .progress-overlay.show { opacity: 1; pointer-events: auto; }
+        .progress-text { font-size: 1.25rem; margin-bottom: 1rem; }
+        .progress-bar {
+            width: 300px;
+            height: 8px;
+            background: var(--bg-tertiary);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            background: var(--accent);
+            width: 0%;
+            transition: width 0.1s;
+        }
+        .progress-status { margin-top: 0.5rem; color: var(--text-muted); font-size: 0.85rem; }
     </style>
 </head>
 <body>
     <div class="container">
         <header class="header">
             <h1><span class="green">Term</span><span class="purple">Shot</span></h1>
-            <p>Create beautiful terminal screenshots for your READMEs & social media</p>
+            <p>Create beautiful terminal screenshots & animated GIFs for your READMEs</p>
+            <div class="header-badges">
+                <span class="badge badge-green">PNG</span>
+                <span class="badge badge-purple">GIF</span>
+                <span class="badge badge-blue">SVG</span>
+            </div>
         </header>
 
         <div class="layout">
-            <!-- Controls -->
             <div class="controls">
-                <!-- Theme Selection -->
                 <div class="card">
                     <div class="card-title">Theme</div>
                     <div class="theme-grid" id="themeGrid"></div>
                 </div>
 
-                <!-- Settings -->
                 <div class="card">
                     <div class="card-title">Settings</div>
                     
@@ -220,14 +270,23 @@
                         <input type="text" class="form-input" id="terminalTitle" value="maeitsec@kali:~/pentest">
                     </div>
 
-                    <div class="form-group">
-                        <label class="form-label">Resolution</label>
-                        <select class="form-select" id="resolution">
-                            <option value="800">GitHub README (800px)</option>
-                            <option value="1200">Twitter/LinkedIn (1200px)</option>
-                            <option value="600">Discord (600px)</option>
-                            <option value="1920">Full HD (1920px)</option>
-                        </select>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Resolution</label>
+                            <select class="form-select" id="resolution">
+                                <option value="800">GitHub (800px)</option>
+                                <option value="1200">Twitter (1200px)</option>
+                                <option value="600">Discord (600px)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Typing Speed</label>
+                            <select class="form-select" id="typingSpeed">
+                                <option value="fast">Fast</option>
+                                <option value="normal" selected>Normal</option>
+                                <option value="slow">Slow</option>
+                            </select>
+                        </div>
                     </div>
 
                     <div class="form-group">
@@ -244,44 +303,46 @@
                             <input type="checkbox" id="showShadow" checked>
                             Shadow
                         </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="loopGif" checked>
+                            Loop GIF
+                        </label>
                     </div>
                 </div>
 
-                <!-- Content Editor -->
                 <div class="card">
                     <div class="card-title">Terminal Content</div>
-                    <textarea class="form-textarea" id="terminalContent">> nmap -sC -sV -p- target.com
+                    <textarea class="form-textarea" id="terminalContent">> nmap -sC -sV target.com
 !!
-Starting Nmap 7.94 ( https://nmap.org )
-PORT     STATE SERVICE VERSION
-22/tcp   open  ssh     OpenSSH 8.9
-80/tcp   open  http    Apache 2.4.52
-443/tcp  open  ssl     Apache 2.4.52
+PORT    STATE SERVICE VERSION
+22/tcp  open  ssh     OpenSSH 8.9
+80/tcp  open  http    Apache 2.4.52
+443/tcp open  ssl     Apache 2.4.52
 !!
 > gobuster dir -u http://target.com -w common.txt
 !!
-/admin                (Status: 302)
-/api                  (Status: 200)
-/uploads              (Status: 403)
+/admin   (Status: 302)
+/api     (Status: 200)
+/uploads (Status: 403)
 !!
-> sqlmap -u "http://target.com/page?id=1" --batch
+> curl http://target.com/api/users
 !!
-[*] testing connection to the target URL
-[+] parameter 'id' is vulnerable
+{"users":[{"id":1,"name":"admin"}]}
 !!</textarea>
                     <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.5rem;">
-                        Use <code style="background: var(--bg-tertiary); padding: 0.1rem 0.3rem; border-radius: 4px;">&gt;</code> for commands, wrap output in <code style="background: var(--bg-tertiary); padding: 0.1rem 0.3rem; border-radius: 4px;">!!</code>
+                        <code style="background: var(--bg-tertiary); padding: 0.1rem 0.3rem; border-radius: 4px;">&gt;</code> = command (typed) · 
+                        <code style="background: var(--bg-tertiary); padding: 0.1rem 0.3rem; border-radius: 4px;">!!</code> = output wrapper
                     </p>
                 </div>
 
-                <!-- Actions -->
                 <div class="btn-group">
-                    <button class="btn btn-primary" id="animateBtn">▶ Preview Animation</button>
-                    <button class="btn btn-success" id="downloadBtn">📥 Download PNG</button>
+                    <button class="btn btn-primary" id="previewBtn">▶ Preview</button>
+                    <button class="btn btn-orange" id="gifBtn">🎬 GIF</button>
+                    <button class="btn btn-success" id="pngBtn">📷 PNG</button>
+                    <button class="btn btn-blue" id="svgBtn">📐 SVG</button>
                 </div>
             </div>
 
-            <!-- Preview -->
             <div class="preview-area">
                 <div class="card">
                     <div class="card-title">Preview</div>
@@ -301,7 +362,6 @@ PORT     STATE SERVICE VERSION
                     </div>
                 </div>
 
-                <!-- Syntax Help -->
                 <div class="card">
                     <div class="card-title" style="color: var(--accent);">Quick Syntax</div>
                     <div class="syntax-help">
@@ -315,14 +375,21 @@ PORT     STATE SERVICE VERSION
         </div>
 
         <footer class="footer">
-            Made with ☕ by <span class="green">maeitsec</span> | Part of the <a href="index.html" style="color: var(--accent);">Security Toolkit</a>
+            Made with ☕ by <span class="green">maeitsec</span> | <a href="index.html">Back to Toolkit</a>
         </footer>
     </div>
 
     <div class="toast" id="toast">✓ Downloaded!</div>
+    
+    <div class="progress-overlay" id="progressOverlay">
+        <div class="progress-text">🎬 Generating GIF...</div>
+        <div class="progress-bar">
+            <div class="progress-fill" id="progressFill"></div>
+        </div>
+        <div class="progress-status" id="progressStatus">Capturing frames...</div>
+    </div>
 
     <script>
-        // Themes
         const themes = {
             dracula: { bg: '#282a36', text: '#f8f8f2', prompt: '#50fa7b', command: '#8be9fd', output: '#bd93f9', border: '#44475a' },
             nord: { bg: '#2e3440', text: '#eceff4', prompt: '#a3be8c', command: '#88c0d0', output: '#b48ead', border: '#4c566a' },
@@ -338,10 +405,11 @@ PORT     STATE SERVICE VERSION
             hacker: { bg: '#000000', text: '#20c20e', prompt: '#20c20e', command: '#33ff33', output: '#00aa00', border: '#0a3d0a' }
         };
 
+        const speeds = { fast: 20, normal: 40, slow: 80 };
         let currentTheme = 'dracula';
         let isAnimating = false;
 
-        // Initialize theme buttons
+        // Initialize themes
         const themeGrid = document.getElementById('themeGrid');
         Object.entries(themes).forEach(([name, colors]) => {
             const btn = document.createElement('button');
@@ -349,24 +417,18 @@ PORT     STATE SERVICE VERSION
             btn.textContent = name;
             btn.style.backgroundColor = colors.bg;
             btn.style.color = colors.text;
-            btn.onclick = () => selectTheme(name);
+            btn.onclick = () => {
+                currentTheme = name;
+                document.querySelectorAll('.theme-btn').forEach(b => b.classList.toggle('active', b.textContent === name));
+                renderTerminal();
+            };
             themeGrid.appendChild(btn);
         });
 
-        function selectTheme(name) {
-            currentTheme = name;
-            document.querySelectorAll('.theme-btn').forEach(btn => {
-                btn.classList.toggle('active', btn.textContent === name);
-            });
-            renderTerminal();
-        }
-
-        // Parse content
         function parseContent(text) {
             const lines = text.split('\n');
             const result = [];
             let i = 0;
-            
             while (i < lines.length) {
                 const line = lines[i];
                 if (line.startsWith('>')) {
@@ -378,9 +440,7 @@ PORT     STATE SERVICE VERSION
                         outputLines.push(lines[i]);
                         i++;
                     }
-                    if (outputLines.length > 0) {
-                        result.push({ type: 'output', text: outputLines.join('\n') });
-                    }
+                    if (outputLines.length) result.push({ type: 'output', text: outputLines.join('\n') });
                 } else if (line.trim()) {
                     result.push({ type: 'output', text: line });
                 }
@@ -389,7 +449,10 @@ PORT     STATE SERVICE VERSION
             return result;
         }
 
-        // Render terminal
+        function escapeHtml(text) {
+            return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>');
+        }
+
         function renderTerminal(content = null) {
             const theme = themes[currentTheme];
             const terminal = document.getElementById('terminal');
@@ -400,36 +463,26 @@ PORT     STATE SERVICE VERSION
             const dots = document.getElementById('terminalDots');
             const placeholder = document.getElementById('dotsPlaceholder');
             
-            // Apply theme
             terminal.style.backgroundColor = theme.bg;
             terminal.style.border = `1px solid ${theme.border}`;
             header.style.backgroundColor = theme.border;
             titleDisplay.style.color = theme.text;
-            
-            // Apply settings
-            const fontSize = document.getElementById('fontSize').value;
-            body.style.fontSize = fontSize + 'px';
-            
+            body.style.fontSize = document.getElementById('fontSize').value + 'px';
             titleDisplay.textContent = document.getElementById('terminalTitle').value;
             
             const showDots = document.getElementById('showDots').checked;
             dots.style.display = showDots ? 'flex' : 'none';
             placeholder.style.display = showDots ? 'block' : 'none';
             
-            const showShadow = document.getElementById('showShadow').checked;
-            wrapper.classList.toggle('shadow', showShadow);
+            wrapper.classList.toggle('shadow', document.getElementById('showShadow').checked);
+            wrapper.style.maxWidth = document.getElementById('resolution').value + 'px';
             
-            const resolution = document.getElementById('resolution').value;
-            wrapper.style.maxWidth = resolution + 'px';
-            
-            // Render content
             const parsed = content || parseContent(document.getElementById('terminalContent').value);
             body.innerHTML = '';
             
             parsed.forEach(item => {
                 const line = document.createElement('div');
                 line.className = 'terminal-line';
-                
                 if (item.type === 'command') {
                     line.innerHTML = `<span style="color: ${theme.prompt}">❯ </span><span style="color: ${theme.command}">${escapeHtml(item.text)}</span>`;
                 } else {
@@ -438,25 +491,22 @@ PORT     STATE SERVICE VERSION
                 body.appendChild(line);
             });
 
-            if (parsed.length === 0) {
+            if (!parsed.length) {
                 body.innerHTML = `<div class="terminal-line"><span style="color: ${theme.prompt}">❯ </span><span class="cursor" style="background: ${theme.text}"></span></div>`;
             }
         }
 
-        function escapeHtml(text) {
-            return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>');
-        }
+        function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
-        // Animation
-        async function animate() {
-            if (isAnimating) return;
+        async function animate(forGif = false) {
+            if (isAnimating) return [];
             isAnimating = true;
-            document.getElementById('animateBtn').disabled = true;
-            document.getElementById('animateBtn').textContent = '▶ Animating...';
-
+            
             const theme = themes[currentTheme];
             const body = document.getElementById('terminalBody');
             const parsed = parseContent(document.getElementById('terminalContent').value);
+            const speed = speeds[document.getElementById('typingSpeed').value];
+            const frames = [];
             
             body.innerHTML = '';
 
@@ -472,46 +522,129 @@ PORT     STATE SERVICE VERSION
                     
                     for (let i = 0; i < item.text.length; i++) {
                         cmdSpan.textContent += item.text[i];
-                        await sleep(30 + Math.random() * 50);
+                        if (forGif) {
+                            const canvas = await html2canvas(document.getElementById('terminalWrapper'), { backgroundColor: null, scale: 1 });
+                            frames.push({ canvas, delay: speed });
+                        }
+                        await sleep(speed);
                     }
                     cursor.remove();
+                    if (forGif) {
+                        const canvas = await html2canvas(document.getElementById('terminalWrapper'), { backgroundColor: null, scale: 1 });
+                        frames.push({ canvas, delay: 200 });
+                    }
                     await sleep(200);
                 } else {
                     const line = document.createElement('div');
                     line.className = 'terminal-line';
                     line.innerHTML = `<span style="color: ${theme.output}">${escapeHtml(item.text)}</span>`;
                     body.appendChild(line);
+                    if (forGif) {
+                        const canvas = await html2canvas(document.getElementById('terminalWrapper'), { backgroundColor: null, scale: 1 });
+                        frames.push({ canvas, delay: 100 });
+                    }
                     await sleep(100);
                 }
             }
+            
+            // Hold final frame
+            if (forGif) {
+                const canvas = await html2canvas(document.getElementById('terminalWrapper'), { backgroundColor: null, scale: 1 });
+                frames.push({ canvas, delay: 2000 });
+            }
 
             isAnimating = false;
-            document.getElementById('animateBtn').disabled = false;
-            document.getElementById('animateBtn').textContent = '▶ Preview Animation';
+            return frames;
         }
 
-        function sleep(ms) {
-            return new Promise(resolve => setTimeout(resolve, ms));
-        }
-
-        // Download
-        async function download() {
-            const wrapper = document.getElementById('terminalWrapper');
-            const canvas = await html2canvas(wrapper, {
-                backgroundColor: null,
-                scale: 2
-            });
-            
+        async function downloadPNG() {
+            renderTerminal();
+            await sleep(100);
+            const canvas = await html2canvas(document.getElementById('terminalWrapper'), { backgroundColor: null, scale: 2 });
             const link = document.createElement('a');
             link.download = 'termshot.png';
             link.href = canvas.toDataURL('image/png');
             link.click();
-            
-            showToast();
+            showToast('PNG Downloaded!');
         }
 
-        function showToast() {
+        async function downloadSVG() {
+            const wrapper = document.getElementById('terminalWrapper');
+            const canvas = await html2canvas(wrapper, { backgroundColor: null, scale: 2 });
+            
+            const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${canvas.width}" height="${canvas.height}">
+                <foreignObject width="100%" height="100%">
+                    <div xmlns="http://www.w3.org/1999/xhtml">
+                        <img src="${canvas.toDataURL('image/png')}" width="${canvas.width}" height="${canvas.height}"/>
+                    </div>
+                </foreignObject>
+            </svg>`;
+            
+            const blob = new Blob([svg], { type: 'image/svg+xml' });
+            const link = document.createElement('a');
+            link.download = 'termshot.svg';
+            link.href = URL.createObjectURL(blob);
+            link.click();
+            showToast('SVG Downloaded!');
+        }
+
+        async function downloadGIF() {
+            const overlay = document.getElementById('progressOverlay');
+            const progressFill = document.getElementById('progressFill');
+            const progressStatus = document.getElementById('progressStatus');
+            
+            overlay.classList.add('show');
+            progressFill.style.width = '0%';
+            progressStatus.textContent = 'Capturing animation frames...';
+            
+            document.getElementById('gifBtn').disabled = true;
+            
+            const frames = await animate(true);
+            
+            if (!frames.length) {
+                overlay.classList.remove('show');
+                document.getElementById('gifBtn').disabled = false;
+                return;
+            }
+            
+            progressStatus.textContent = 'Encoding GIF...';
+            progressFill.style.width = '50%';
+            
+            const gif = new GIF({
+                workers: 2,
+                quality: 10,
+                width: frames[0].canvas.width,
+                height: frames[0].canvas.height,
+                workerScript: 'https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.worker.js'
+            });
+            
+            frames.forEach((frame, i) => {
+                gif.addFrame(frame.canvas, { delay: frame.delay, copy: true });
+                progressFill.style.width = (50 + (i / frames.length) * 40) + '%';
+            });
+            
+            gif.on('finished', blob => {
+                progressFill.style.width = '100%';
+                progressStatus.textContent = 'Done!';
+                
+                const link = document.createElement('a');
+                link.download = 'termshot.gif';
+                link.href = URL.createObjectURL(blob);
+                link.click();
+                
+                setTimeout(() => {
+                    overlay.classList.remove('show');
+                    document.getElementById('gifBtn').disabled = false;
+                    showToast('GIF Downloaded!');
+                }, 500);
+            });
+            
+            gif.render();
+        }
+
+        function showToast(msg) {
             const toast = document.getElementById('toast');
+            toast.textContent = '✓ ' + msg;
             toast.classList.add('show');
             setTimeout(() => toast.classList.remove('show'), 2000);
         }
@@ -520,16 +653,18 @@ PORT     STATE SERVICE VERSION
         document.getElementById('terminalTitle').addEventListener('input', () => renderTerminal());
         document.getElementById('terminalContent').addEventListener('input', () => renderTerminal());
         document.getElementById('resolution').addEventListener('change', () => renderTerminal());
-        document.getElementById('fontSize').addEventListener('input', (e) => {
+        document.getElementById('fontSize').addEventListener('input', e => {
             document.getElementById('fontSizeValue').textContent = e.target.value;
             renderTerminal();
         });
         document.getElementById('showDots').addEventListener('change', () => renderTerminal());
         document.getElementById('showShadow').addEventListener('change', () => renderTerminal());
-        document.getElementById('animateBtn').addEventListener('click', animate);
-        document.getElementById('downloadBtn').addEventListener('click', download);
+        
+        document.getElementById('previewBtn').addEventListener('click', () => animate(false));
+        document.getElementById('pngBtn').addEventListener('click', downloadPNG);
+        document.getElementById('svgBtn').addEventListener('click', downloadSVG);
+        document.getElementById('gifBtn').addEventListener('click', downloadGIF);
 
-        // Initial render
         renderTerminal();
     </script>
 </body>
