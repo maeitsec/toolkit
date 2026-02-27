@@ -7,7 +7,10 @@
     <meta name="description" content="Create beautiful terminal screenshots and animated GIFs for your READMEs and social media">
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.js"></script>
+    <script>
+    // Inline GIF Encoder (no external worker needed)
+    class GIFEncoder{constructor(e,t,r="neuquant",i=10){this.width=e,this.height=t,this.method=r,this.quality=i,this.frames=[],this.globalPalette=null}addFrame(e,t=100){let r;if(e instanceof HTMLCanvasElement){const t=e.getContext("2d").getImageData(0,0,this.width,this.height);r=t.data}else r=e;this.frames.push({data:r,delay:t})}encode(){const e=[];e.push(71,73,70,56,57,97),e.push(255&this.width,this.width>>8&255),e.push(255&this.height,this.height>>8&255),e.push(240,0,0);for(let t=0;t<256;t++)e.push(t,t,t);e.push(33,255,11,78,69,84,83,67,65,80,69,50,46,48,3,1,0,0,0);for(const t of this.frames){e.push(33,249,4,0);const r=Math.round(t.delay/10);e.push(255&r,r>>8&255,0,0),e.push(44,0,0,0,0),e.push(255&this.width,this.width>>8&255),e.push(255&this.height,this.height>>8&255),e.push(0);const i=this.processFrame(t.data);e.push(8);const s=this.lzwEncode(8,i);for(let t=0;t<s.length;t+=255){const r=Math.min(255,s.length-t);e.push(r);for(let i=0;i<r;i++)e.push(s[t+i])}e.push(0)}return e.push(59),new Uint8Array(e)}processFrame(e){const t=new Uint8Array(this.width*this.height);for(let r=0;r<t.length;r++){const i=4*r,s=e[i],n=e[i+1],a=e[i+2];t[r]=Math.round(.299*s+.587*n+.114*a)}return t}lzwEncode(e,t){const r=1<<e,i=r+1;let s=e+1,n=i+1;const a={};for(let e=0;e<r;e++)a[e]=e;const o=[];let h=[],l=t[0];for(let e=1;e<t.length;e++){const r=t[e],i=l+"_"+r;if(void 0!==a[i])l=i;else{o.push(a[l]),a[i]=n++,n>=1<<s&&s<12&&s++,l=r}}o.push(a[l]),o.push(i);const c=[];let d=0,f=0;for(const e of o)f|=e<<d,d+=s,d>=8&&(c.push(255&f),f>>=8,d-=8);return d>0&&c.push(255&f),c}}
+    </script>
     <style>
         :root {
             --bg-primary: #09090b;
@@ -595,35 +598,33 @@ PORT    STATE SERVICE VERSION
             
             overlay.classList.add('show');
             progressFill.style.width = '0%';
-            progressStatus.textContent = 'Capturing animation frames...';
+            progressStatus.textContent = 'Capturing frames...';
             
             document.getElementById('gifBtn').disabled = true;
             
-            const frames = await animate(true);
-            
-            if (!frames.length) {
-                overlay.classList.remove('show');
-                document.getElementById('gifBtn').disabled = false;
-                return;
-            }
-            
-            progressStatus.textContent = 'Encoding GIF...';
-            progressFill.style.width = '50%';
-            
-            const gif = new GIF({
-                workers: 2,
-                quality: 10,
-                width: frames[0].canvas.width,
-                height: frames[0].canvas.height,
-                workerScript: 'https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.worker.js'
-            });
-            
-            frames.forEach((frame, i) => {
-                gif.addFrame(frame.canvas, { delay: frame.delay, copy: true });
-                progressFill.style.width = (50 + (i / frames.length) * 40) + '%';
-            });
-            
-            gif.on('finished', blob => {
+            try {
+                const frames = await animate(true);
+                
+                if (!frames.length) {
+                    throw new Error('No frames captured');
+                }
+                
+                progressStatus.textContent = 'Encoding GIF...';
+                progressFill.style.width = '50%';
+                
+                const width = frames[0].canvas.width;
+                const height = frames[0].canvas.height;
+                const encoder = new GIFEncoder(width, height);
+                
+                frames.forEach((frame, i) => {
+                    encoder.addFrame(frame.canvas, frame.delay);
+                    progressFill.style.width = (50 + (i / frames.length) * 45) + '%';
+                });
+                
+                progressStatus.textContent = 'Finalizing...';
+                const gifData = encoder.encode();
+                const blob = new Blob([gifData], { type: 'image/gif' });
+                
                 progressFill.style.width = '100%';
                 progressStatus.textContent = 'Done!';
                 
@@ -634,12 +635,16 @@ PORT    STATE SERVICE VERSION
                 
                 setTimeout(() => {
                     overlay.classList.remove('show');
-                    document.getElementById('gifBtn').disabled = false;
                     showToast('GIF Downloaded!');
                 }, 500);
-            });
+                
+            } catch (err) {
+                console.error('GIF Error:', err);
+                progressStatus.textContent = 'Error: ' + err.message;
+                setTimeout(() => overlay.classList.remove('show'), 2000);
+            }
             
-            gif.render();
+            document.getElementById('gifBtn').disabled = false;
         }
 
         function showToast(msg) {
