@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TermShot | Terminal Screenshot Generator</title>
+    <meta name="description" content="Create beautiful terminal screenshots for your READMEs and social media">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        :root {
+            --bg-primary: #09090b;
+            --bg-secondary: #18181b;
+            --bg-tertiary: #27272a;
+            --accent: #22c55e;
+            --accent-purple: #a855f7;
+            --text: #fafafa;
+            --text-muted: #71717a;
+            --border: #3f3f46;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text);
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+        .container { max-width: 1400px; margin: 0 auto; padding: 2rem; }
+        
+        /* Header */
+        .header { text-align: center; margin-bottom: 3rem; }
+        .header h1 { font-size: 3rem; font-weight: 700; margin-bottom: 0.5rem; }
+        .header h1 .green { color: var(--accent); }
+        .header h1 .purple { color: var(--accent-purple); }
+        .header p { color: var(--text-muted); }
+        
+        /* Layout */
+        .layout { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; }
+        @media (max-width: 1024px) { .layout { grid-template-columns: 1fr; } }
+        
+        /* Cards */
+        .card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        .card-title {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text-muted);
+            margin-bottom: 1rem;
+        }
+        
+        /* Theme Grid */
+        .theme-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.5rem; }
+        .theme-btn {
+            padding: 0.5rem;
+            border: 2px solid transparent;
+            border-radius: 8px;
+            font-size: 0.7rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-transform: capitalize;
+        }
+        .theme-btn:hover { transform: scale(1.05); }
+        .theme-btn.active { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(34,197,94,0.3); }
+        
+        /* Form Elements */
+        .form-group { margin-bottom: 1rem; }
+        .form-label { display: block; font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.5rem; }
+        .form-input, .form-select, .form-textarea {
+            width: 100%;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 0.75rem;
+            color: var(--text);
+            font-size: 0.9rem;
+            transition: border-color 0.2s;
+        }
+        .form-input:focus, .form-select:focus, .form-textarea:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+        .form-textarea {
+            font-family: 'JetBrains Mono', monospace;
+            min-height: 200px;
+            resize: vertical;
+        }
+        
+        /* Range Slider */
+        .range-slider { width: 100%; accent-color: var(--accent); }
+        
+        /* Checkboxes */
+        .checkbox-group { display: flex; gap: 1.5rem; }
+        .checkbox-label {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+            cursor: pointer;
+        }
+        .checkbox-label input { accent-color: var(--accent); }
+        
+        /* Buttons */
+        .btn-group { display: flex; gap: 0.75rem; }
+        .btn {
+            flex: 1;
+            padding: 0.875rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-primary { background: var(--accent-purple); color: white; }
+        .btn-primary:hover { background: #9333ea; }
+        .btn-success { background: var(--accent); color: black; }
+        .btn-success:hover { background: #16a34a; }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        
+        /* Terminal Preview */
+        .preview-area { position: sticky; top: 2rem; }
+        .terminal-wrapper {
+            border-radius: 12px;
+            overflow: hidden;
+            transition: box-shadow 0.3s;
+        }
+        .terminal-wrapper.shadow { box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); }
+        .terminal {
+            border-radius: 12px;
+            overflow: hidden;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .terminal-header {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem 1rem;
+            gap: 0.5rem;
+        }
+        .terminal-dots { display: flex; gap: 0.5rem; }
+        .terminal-dot { width: 12px; height: 12px; border-radius: 50%; }
+        .dot-red { background: #ef4444; }
+        .dot-yellow { background: #eab308; }
+        .dot-green { background: #22c55e; }
+        .terminal-title {
+            flex: 1;
+            text-align: center;
+            font-size: 0.8rem;
+            opacity: 0.7;
+        }
+        .terminal-body { padding: 1rem; min-height: 200px; }
+        .terminal-line { white-space: pre-wrap; word-break: break-all; }
+        .cursor {
+            display: inline-block;
+            width: 8px;
+            height: 1em;
+            margin-left: 2px;
+            animation: blink 1s infinite;
+            vertical-align: middle;
+        }
+        @keyframes blink { 50% { opacity: 0; } }
+        
+        /* Syntax Help */
+        .syntax-help { font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; }
+        .syntax-help p { margin-bottom: 0.25rem; }
+        .syntax-help .yellow { color: #eab308; }
+        .syntax-help .purple { color: var(--accent-purple); }
+        .syntax-help .muted { color: var(--text-muted); }
+        
+        /* Footer */
+        .footer { text-align: center; margin-top: 3rem; color: var(--text-muted); font-size: 0.85rem; }
+        .footer .green { color: var(--accent); }
+        
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background: var(--accent);
+            color: black;
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 600;
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.3s;
+        }
+        .toast.show { transform: translateY(0); opacity: 1; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1><span class="green">Term</span><span class="purple">Shot</span></h1>
+            <p>Create beautiful terminal screenshots for your READMEs & social media</p>
+        </header>
+
+        <div class="layout">
+            <!-- Controls -->
+            <div class="controls">
+                <!-- Theme Selection -->
+                <div class="card">
+                    <div class="card-title">Theme</div>
+                    <div class="theme-grid" id="themeGrid"></div>
+                </div>
+
+                <!-- Settings -->
+                <div class="card">
+                    <div class="card-title">Settings</div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Window Title</label>
+                        <input type="text" class="form-input" id="terminalTitle" value="maeitsec@kali:~/pentest">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Resolution</label>
+                        <select class="form-select" id="resolution">
+                            <option value="800">GitHub README (800px)</option>
+                            <option value="1200">Twitter/LinkedIn (1200px)</option>
+                            <option value="600">Discord (600px)</option>
+                            <option value="1920">Full HD (1920px)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Font Size: <span id="fontSizeValue">14</span>px</label>
+                        <input type="range" class="range-slider" id="fontSize" min="10" max="20" value="14">
+                    </div>
+
+                    <div class="checkbox-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="showDots" checked>
+                            Window Dots
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="showShadow" checked>
+                            Shadow
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Content Editor -->
+                <div class="card">
+                    <div class="card-title">Terminal Content</div>
+                    <textarea class="form-textarea" id="terminalContent">> nmap -sC -sV -p- target.com
+!!
+Starting Nmap 7.94 ( https://nmap.org )
+PORT     STATE SERVICE VERSION
+22/tcp   open  ssh     OpenSSH 8.9
+80/tcp   open  http    Apache 2.4.52
+443/tcp  open  ssl     Apache 2.4.52
+!!
+> gobuster dir -u http://target.com -w common.txt
+!!
+/admin                (Status: 302)
+/api                  (Status: 200)
+/uploads              (Status: 403)
+!!
+> sqlmap -u "http://target.com/page?id=1" --batch
+!!
+[*] testing connection to the target URL
+[+] parameter 'id' is vulnerable
+!!</textarea>
+                    <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.5rem;">
+                        Use <code style="background: var(--bg-tertiary); padding: 0.1rem 0.3rem; border-radius: 4px;">&gt;</code> for commands, wrap output in <code style="background: var(--bg-tertiary); padding: 0.1rem 0.3rem; border-radius: 4px;">!!</code>
+                    </p>
+                </div>
+
+                <!-- Actions -->
+                <div class="btn-group">
+                    <button class="btn btn-primary" id="animateBtn">▶ Preview Animation</button>
+                    <button class="btn btn-success" id="downloadBtn">📥 Download PNG</button>
+                </div>
+            </div>
+
+            <!-- Preview -->
+            <div class="preview-area">
+                <div class="card">
+                    <div class="card-title">Preview</div>
+                    <div class="terminal-wrapper shadow" id="terminalWrapper">
+                        <div class="terminal" id="terminal">
+                            <div class="terminal-header" id="terminalHeader">
+                                <div class="terminal-dots" id="terminalDots">
+                                    <div class="terminal-dot dot-red"></div>
+                                    <div class="terminal-dot dot-yellow"></div>
+                                    <div class="terminal-dot dot-green"></div>
+                                </div>
+                                <div class="terminal-title" id="terminalTitleDisplay">maeitsec@kali:~/pentest</div>
+                                <div style="width: 52px;" id="dotsPlaceholder"></div>
+                            </div>
+                            <div class="terminal-body" id="terminalBody"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Syntax Help -->
+                <div class="card">
+                    <div class="card-title" style="color: var(--accent);">Quick Syntax</div>
+                    <div class="syntax-help">
+                        <p><span class="yellow">&gt;</span> command here <span class="muted">← typed with animation</span></p>
+                        <p><span class="purple">!!</span></p>
+                        <p>output appears instantly</p>
+                        <p><span class="purple">!!</span></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <footer class="footer">
+            Made with ☕ by <span class="green">maeitsec</span> | Part of the <a href="index.html" style="color: var(--accent);">Security Toolkit</a>
+        </footer>
+    </div>
+
+    <div class="toast" id="toast">✓ Downloaded!</div>
+
+    <script>
+        // Themes
+        const themes = {
+            dracula: { bg: '#282a36', text: '#f8f8f2', prompt: '#50fa7b', command: '#8be9fd', output: '#bd93f9', border: '#44475a' },
+            nord: { bg: '#2e3440', text: '#eceff4', prompt: '#a3be8c', command: '#88c0d0', output: '#b48ead', border: '#4c566a' },
+            matrix: { bg: '#0d0d0d', text: '#00ff00', prompt: '#00ff00', command: '#00cc00', output: '#008800', border: '#003300' },
+            synthwave: { bg: '#2b213a', text: '#ff7edb', prompt: '#72f1b8', command: '#fede5d', output: '#fe4450', border: '#495495' },
+            monokai: { bg: '#272822', text: '#f8f8f2', prompt: '#a6e22e', command: '#66d9ef', output: '#fd971f', border: '#49483e' },
+            solarized: { bg: '#002b36', text: '#839496', prompt: '#859900', command: '#268bd2', output: '#cb4b16', border: '#073642' },
+            gruvbox: { bg: '#282828', text: '#ebdbb2', prompt: '#b8bb26', command: '#83a598', output: '#fe8019', border: '#3c3836' },
+            tokyonight: { bg: '#1a1b26', text: '#c0caf5', prompt: '#9ece6a', command: '#7aa2f7', output: '#bb9af7', border: '#33467c' },
+            catppuccin: { bg: '#1e1e2e', text: '#cdd6f4', prompt: '#a6e3a1', command: '#89b4fa', output: '#f5c2e7', border: '#313244' },
+            cyberpunk: { bg: '#0a0a0a', text: '#00ffff', prompt: '#ff00ff', command: '#ffff00', output: '#00ff00', border: '#ff0080' },
+            ocean: { bg: '#1b2838', text: '#c0c5ce', prompt: '#99c794', command: '#6699cc', output: '#ec5f67', border: '#343d46' },
+            hacker: { bg: '#000000', text: '#20c20e', prompt: '#20c20e', command: '#33ff33', output: '#00aa00', border: '#0a3d0a' }
+        };
+
+        let currentTheme = 'dracula';
+        let isAnimating = false;
+
+        // Initialize theme buttons
+        const themeGrid = document.getElementById('themeGrid');
+        Object.entries(themes).forEach(([name, colors]) => {
+            const btn = document.createElement('button');
+            btn.className = `theme-btn ${name === currentTheme ? 'active' : ''}`;
+            btn.textContent = name;
+            btn.style.backgroundColor = colors.bg;
+            btn.style.color = colors.text;
+            btn.onclick = () => selectTheme(name);
+            themeGrid.appendChild(btn);
+        });
+
+        function selectTheme(name) {
+            currentTheme = name;
+            document.querySelectorAll('.theme-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.textContent === name);
+            });
+            renderTerminal();
+        }
+
+        // Parse content
+        function parseContent(text) {
+            const lines = text.split('\n');
+            const result = [];
+            let i = 0;
+            
+            while (i < lines.length) {
+                const line = lines[i];
+                if (line.startsWith('>')) {
+                    result.push({ type: 'command', text: line.substring(1).trim() });
+                } else if (line.trim() === '!!') {
+                    const outputLines = [];
+                    i++;
+                    while (i < lines.length && lines[i].trim() !== '!!') {
+                        outputLines.push(lines[i]);
+                        i++;
+                    }
+                    if (outputLines.length > 0) {
+                        result.push({ type: 'output', text: outputLines.join('\n') });
+                    }
+                } else if (line.trim()) {
+                    result.push({ type: 'output', text: line });
+                }
+                i++;
+            }
+            return result;
+        }
+
+        // Render terminal
+        function renderTerminal(content = null) {
+            const theme = themes[currentTheme];
+            const terminal = document.getElementById('terminal');
+            const header = document.getElementById('terminalHeader');
+            const body = document.getElementById('terminalBody');
+            const titleDisplay = document.getElementById('terminalTitleDisplay');
+            const wrapper = document.getElementById('terminalWrapper');
+            const dots = document.getElementById('terminalDots');
+            const placeholder = document.getElementById('dotsPlaceholder');
+            
+            // Apply theme
+            terminal.style.backgroundColor = theme.bg;
+            terminal.style.border = `1px solid ${theme.border}`;
+            header.style.backgroundColor = theme.border;
+            titleDisplay.style.color = theme.text;
+            
+            // Apply settings
+            const fontSize = document.getElementById('fontSize').value;
+            body.style.fontSize = fontSize + 'px';
+            
+            titleDisplay.textContent = document.getElementById('terminalTitle').value;
+            
+            const showDots = document.getElementById('showDots').checked;
+            dots.style.display = showDots ? 'flex' : 'none';
+            placeholder.style.display = showDots ? 'block' : 'none';
+            
+            const showShadow = document.getElementById('showShadow').checked;
+            wrapper.classList.toggle('shadow', showShadow);
+            
+            const resolution = document.getElementById('resolution').value;
+            wrapper.style.maxWidth = resolution + 'px';
+            
+            // Render content
+            const parsed = content || parseContent(document.getElementById('terminalContent').value);
+            body.innerHTML = '';
+            
+            parsed.forEach(item => {
+                const line = document.createElement('div');
+                line.className = 'terminal-line';
+                
+                if (item.type === 'command') {
+                    line.innerHTML = `<span style="color: ${theme.prompt}">❯ </span><span style="color: ${theme.command}">${escapeHtml(item.text)}</span>`;
+                } else {
+                    line.innerHTML = `<span style="color: ${theme.output}">${escapeHtml(item.text)}</span>`;
+                }
+                body.appendChild(line);
+            });
+
+            if (parsed.length === 0) {
+                body.innerHTML = `<div class="terminal-line"><span style="color: ${theme.prompt}">❯ </span><span class="cursor" style="background: ${theme.text}"></span></div>`;
+            }
+        }
+
+        function escapeHtml(text) {
+            return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>');
+        }
+
+        // Animation
+        async function animate() {
+            if (isAnimating) return;
+            isAnimating = true;
+            document.getElementById('animateBtn').disabled = true;
+            document.getElementById('animateBtn').textContent = '▶ Animating...';
+
+            const theme = themes[currentTheme];
+            const body = document.getElementById('terminalBody');
+            const parsed = parseContent(document.getElementById('terminalContent').value);
+            
+            body.innerHTML = '';
+
+            for (const item of parsed) {
+                if (item.type === 'command') {
+                    const line = document.createElement('div');
+                    line.className = 'terminal-line';
+                    line.innerHTML = `<span style="color: ${theme.prompt}">❯ </span><span class="cmd" style="color: ${theme.command}"></span><span class="cursor" style="background: ${theme.text}"></span>`;
+                    body.appendChild(line);
+                    
+                    const cmdSpan = line.querySelector('.cmd');
+                    const cursor = line.querySelector('.cursor');
+                    
+                    for (let i = 0; i < item.text.length; i++) {
+                        cmdSpan.textContent += item.text[i];
+                        await sleep(30 + Math.random() * 50);
+                    }
+                    cursor.remove();
+                    await sleep(200);
+                } else {
+                    const line = document.createElement('div');
+                    line.className = 'terminal-line';
+                    line.innerHTML = `<span style="color: ${theme.output}">${escapeHtml(item.text)}</span>`;
+                    body.appendChild(line);
+                    await sleep(100);
+                }
+            }
+
+            isAnimating = false;
+            document.getElementById('animateBtn').disabled = false;
+            document.getElementById('animateBtn').textContent = '▶ Preview Animation';
+        }
+
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        // Download
+        async function download() {
+            const wrapper = document.getElementById('terminalWrapper');
+            const canvas = await html2canvas(wrapper, {
+                backgroundColor: null,
+                scale: 2
+            });
+            
+            const link = document.createElement('a');
+            link.download = 'termshot.png';
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+            
+            showToast();
+        }
+
+        function showToast() {
+            const toast = document.getElementById('toast');
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 2000);
+        }
+
+        // Event listeners
+        document.getElementById('terminalTitle').addEventListener('input', () => renderTerminal());
+        document.getElementById('terminalContent').addEventListener('input', () => renderTerminal());
+        document.getElementById('resolution').addEventListener('change', () => renderTerminal());
+        document.getElementById('fontSize').addEventListener('input', (e) => {
+            document.getElementById('fontSizeValue').textContent = e.target.value;
+            renderTerminal();
+        });
+        document.getElementById('showDots').addEventListener('change', () => renderTerminal());
+        document.getElementById('showShadow').addEventListener('change', () => renderTerminal());
+        document.getElementById('animateBtn').addEventListener('click', animate);
+        document.getElementById('downloadBtn').addEventListener('click', download);
+
+        // Initial render
+        renderTerminal();
+    </script>
+</body>
+</html>
