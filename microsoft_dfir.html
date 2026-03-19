@@ -1,0 +1,2044 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DFIR Report Generator — M365 / Entra ID</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:      #0d1117;
+    --surface: #161b22;
+    --surface2:#1c2128;
+    --border:  #30363d;
+    --text:    #c9d1d9;
+    --muted:   #8b949e;
+    --accent:  #58a6ff;
+    --danger:  #f85149;
+    --warning: #e3b341;
+    --success: #56d364;
+    --purple:  #bc8cff;
+  }
+
+  body { background: var(--bg); color: var(--text); font-family: -apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif; font-size: 14px; line-height: 1.6; min-height: 100vh; }
+
+  /* ── HEADER ─────────────────────────────────────────── */
+  header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 14px 24px; display: flex; align-items: center; gap: 14px; position: sticky; top: 0; z-index: 100; }
+  header .logo { font-size: 18px; font-weight: 700; color: var(--accent); letter-spacing: -.3px; white-space: nowrap; }
+  header .logo span { color: var(--danger); }
+  header .tagline { color: var(--muted); font-size: 12px; flex: 1; }
+  header .badge { background: var(--danger); color: #fff; font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 10px; letter-spacing: .5px; }
+
+  /* ── STEPS NAV ──────────────────────────────────────── */
+  .steps-nav { display: flex; gap: 0; border-bottom: 1px solid var(--border); background: var(--surface); padding: 0 24px; }
+  .step-btn { display: flex; align-items: center; gap: 8px; padding: 12px 20px; border: none; background: none; color: var(--muted); font-size: 13px; cursor: pointer; border-bottom: 2px solid transparent; transition: all .2s; white-space: nowrap; }
+  .step-btn .num { width: 22px; height: 22px; border-radius: 50%; border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; }
+  .step-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .step-btn.active .num { background: var(--accent); color: #000; border-color: var(--accent); }
+  .step-btn.done { color: var(--success); }
+  .step-btn.done .num { background: var(--success); color: #000; border-color: var(--success); }
+  .step-btn:disabled { opacity: .4; cursor: not-allowed; }
+
+  /* ── MAIN LAYOUT ────────────────────────────────────── */
+  main { max-width: 1200px; margin: 0 auto; padding: 28px 24px; }
+  .step-panel { display: none; }
+  .step-panel.active { display: block; }
+
+  /* ── CARDS ──────────────────────────────────────────── */
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 20px; margin-bottom: 20px; }
+  .card-title { font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+  .card-title .icon { font-size: 16px; }
+
+  /* ── UPLOAD ZONE ────────────────────────────────────── */
+  .upload-zone { border: 2px dashed var(--border); border-radius: 8px; padding: 48px 24px; text-align: center; cursor: pointer; transition: all .2s; position: relative; }
+  .upload-zone:hover, .upload-zone.drag-over { border-color: var(--accent); background: rgba(88,166,255,.05); }
+  .upload-zone input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+  .upload-zone .icon-big { font-size: 42px; margin-bottom: 12px; display: block; }
+  .upload-zone p { color: var(--muted); margin-top: 6px; font-size: 13px; }
+  .upload-zone .browse-link { color: var(--accent); text-decoration: underline; cursor: pointer; }
+
+  /* ── FILE LIST ──────────────────────────────────────── */
+  .file-list { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+  .file-item { background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 10px 14px; display: flex; align-items: center; gap: 12px; }
+  .file-item .f-icon { font-size: 18px; }
+  .file-item .f-info { flex: 1; min-width: 0; }
+  .file-item .f-name { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .file-item .f-meta { font-size: 11px; color: var(--muted); }
+  .file-item .f-type { font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 10px; white-space: nowrap; }
+  .file-item .f-remove { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 16px; padding: 4px; }
+  .file-item .f-remove:hover { color: var(--danger); }
+  .type-interactive { background: rgba(88,166,255,.15); color: var(--accent); }
+  .type-noninteractive { background: rgba(188,140,255,.15); color: var(--purple); }
+  .type-authdetails { background: rgba(86,211,100,.15); color: var(--success); }
+  .type-messagetrace { background: rgba(227,179,65,.15); color: var(--warning); }
+  .type-unknown { background: rgba(248,81,73,.15); color: var(--danger); }
+
+  /* ── PROGRESS ───────────────────────────────────────── */
+  .progress-wrap { margin: 12px 0; }
+  .progress-label { font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+  .progress-bar-outer { height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
+  .progress-bar-inner { height: 100%; background: var(--accent); border-radius: 3px; transition: width .3s; width: 0%; }
+
+  /* ── FORM ───────────────────────────────────────────── */
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .form-grid.single { grid-template-columns: 1fr; }
+  .form-group { display: flex; flex-direction: column; gap: 6px; }
+  .form-group.span2 { grid-column: span 2; }
+  label { font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; }
+  input[type=text], input[type=email], input[type=date], textarea, select {
+    background: var(--bg); border: 1px solid var(--border); border-radius: 6px;
+    color: var(--text); font-size: 13px; padding: 8px 12px; outline: none;
+    transition: border-color .2s; width: 100%; font-family: inherit;
+  }
+  input:focus, textarea:focus, select:focus { border-color: var(--accent); }
+  textarea { resize: vertical; min-height: 80px; }
+
+  /* ── BUTTONS ────────────────────────────────────────── */
+  .btn { display: inline-flex; align-items: center; gap: 7px; padding: 9px 18px; border-radius: 6px; border: 1px solid; font-size: 13px; font-weight: 600; cursor: pointer; transition: all .2s; text-decoration: none; white-space: nowrap; }
+  .btn-primary { background: var(--accent); border-color: var(--accent); color: #000; }
+  .btn-primary:hover { background: #79b8ff; }
+  .btn-secondary { background: var(--surface2); border-color: var(--border); color: var(--text); }
+  .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-danger { background: rgba(248,81,73,.1); border-color: var(--danger); color: var(--danger); }
+  .btn-danger:hover { background: rgba(248,81,73,.2); }
+  .btn-success { background: rgba(86,211,100,.1); border-color: var(--success); color: var(--success); }
+  .btn-success:hover { background: rgba(86,211,100,.2); }
+  .btn:disabled { opacity: .4; cursor: not-allowed; }
+  .btn-group { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
+
+  /* ── ALERTS / BADGES ────────────────────────────────── */
+  .alert { padding: 10px 14px; border-radius: 6px; font-size: 13px; margin: 8px 0; display: flex; gap: 10px; align-items: flex-start; }
+  .alert-info { background: rgba(88,166,255,.1); border-left: 3px solid var(--accent); }
+  .alert-warn { background: rgba(227,179,65,.1); border-left: 3px solid var(--warning); }
+  .alert-danger { background: rgba(248,81,73,.1); border-left: 3px solid var(--danger); }
+  .alert-success { background: rgba(86,211,100,.1); border-left: 3px solid var(--success); }
+
+  /* ── STAT GRID ──────────────────────────────────────── */
+  .stat-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; margin-bottom: 20px; }
+  .stat-box { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 14px; text-align: center; }
+  .stat-num { font-size: 28px; font-weight: 700; color: var(--accent); line-height: 1; }
+  .stat-num.danger { color: var(--danger); }
+  .stat-num.warning { color: var(--warning); }
+  .stat-num.success { color: var(--success); }
+  .stat-label { font-size: 11px; color: var(--muted); margin-top: 4px; text-transform: uppercase; letter-spacing: .5px; }
+
+  /* ── TABLES ─────────────────────────────────────────── */
+  .tbl-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  th { background: var(--surface2); color: var(--muted); text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border); font-weight: 600; text-transform: uppercase; letter-spacing: .4px; white-space: nowrap; }
+  td { padding: 7px 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  tr:hover td { background: rgba(255,255,255,.02); }
+
+  /* ── REPORT TABS ────────────────────────────────────── */
+  .tab-bar { display: flex; gap: 0; border-bottom: 1px solid var(--border); margin-bottom: 20px; }
+  .tab-btn { padding: 10px 18px; border: none; background: none; color: var(--muted); font-size: 13px; cursor: pointer; border-bottom: 2px solid transparent; transition: all .2s; }
+  .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  /* ── MARKDOWN RENDER ────────────────────────────────── */
+  .md-render { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 28px 32px; line-height: 1.8; }
+  .md-render h1 { font-size: 22px; color: var(--text); border-bottom: 1px solid var(--border); padding-bottom: 10px; margin-bottom: 16px; }
+  .md-render h2 { font-size: 17px; color: var(--text); margin: 28px 0 12px; border-bottom: 1px solid var(--border); padding-bottom: 6px; }
+  .md-render h3 { font-size: 14px; color: var(--accent); margin: 20px 0 8px; }
+  .md-render p { margin: 10px 0; }
+  .md-render ul, .md-render ol { padding-left: 22px; margin: 8px 0; }
+  .md-render li { margin: 4px 0; }
+  .md-render code { background: var(--bg); border: 1px solid var(--border); border-radius: 4px; padding: 1px 6px; font-family: 'Consolas','Monaco',monospace; font-size: 12px; color: var(--warning); }
+  .md-render pre { background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 14px; overflow-x: auto; margin: 12px 0; }
+  .md-render pre code { background: none; border: none; padding: 0; color: var(--success); }
+  .md-render table { margin: 12px 0; }
+  .md-render th { background: var(--surface); }
+  .md-render strong { color: #fff; }
+  .md-render blockquote { border-left: 3px solid var(--accent); padding-left: 14px; color: var(--muted); margin: 12px 0; }
+  .md-render hr { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
+
+  /* ── RAW TEXTAREA ───────────────────────────────────── */
+  .raw-md { width: 100%; min-height: 600px; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-family: 'Consolas','Monaco',monospace; font-size: 12px; padding: 16px; resize: vertical; outline: none; line-height: 1.6; }
+
+  /* ── CSS BAR CHART ──────────────────────────────────── */
+  .bar-chart { display: flex; flex-direction: column; gap: 8px; }
+  .bar-row { display: flex; align-items: center; gap: 10px; }
+  .bar-label { width: 200px; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: right; color: var(--muted); flex-shrink: 0; }
+  .bar-track { flex: 1; height: 18px; background: var(--border); border-radius: 4px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 4px; background: var(--accent); transition: width .6s; display: flex; align-items: center; padding-left: 6px; }
+  .bar-fill.danger { background: var(--danger); }
+  .bar-fill.warning { background: var(--warning); }
+  .bar-fill.success { background: var(--success); }
+  .bar-val { font-size: 11px; color: var(--muted); width: 50px; flex-shrink: 0; }
+
+  /* ── SEVERITY BADGE ─────────────────────────────────── */
+  .sev { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: 700; letter-spacing: .5px; }
+  .sev-critical { background: rgba(248,81,73,.2); color: var(--danger); border: 1px solid var(--danger); }
+  .sev-high { background: rgba(227,179,65,.2); color: var(--warning); border: 1px solid var(--warning); }
+  .sev-medium { background: rgba(88,166,255,.2); color: var(--accent); border: 1px solid var(--accent); }
+  .sev-low { background: rgba(86,211,100,.2); color: var(--success); border: 1px solid var(--success); }
+
+  /* ── SAMPLE DATA MODAL ──────────────────────────────── */
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.7); z-index: 500; display: none; align-items: center; justify-content: center; }
+  .modal-overlay.open { display: flex; }
+  .modal { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; max-width: 800px; width: 90vw; max-height: 85vh; display: flex; flex-direction: column; }
+  .modal-header { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+  .modal-header h3 { font-size: 15px; }
+  .modal-close { background: none; border: none; color: var(--muted); font-size: 20px; cursor: pointer; }
+  .modal-body { padding: 20px; overflow-y: auto; flex: 1; }
+  .modal-body pre { background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 12px; font-size: 11px; color: var(--success); overflow-x: auto; white-space: pre; }
+
+  /* ── SPINNER ────────────────────────────────────────── */
+  .spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin .7s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── MISC ───────────────────────────────────────────── */
+  .text-danger { color: var(--danger); }
+  .text-warning { color: var(--warning); }
+  .text-success { color: var(--success); }
+  .text-accent { color: var(--accent); }
+  .text-muted { color: var(--muted); }
+  .monospace { font-family: 'Consolas','Monaco',monospace; }
+  .mt8 { margin-top: 8px; }
+  .mt16 { margin-top: 16px; }
+  .flex { display: flex; }
+  .gap8 { gap: 8px; }
+  .gap16 { gap: 16px; }
+  .align-center { align-items: center; }
+  .justify-between { justify-content: space-between; }
+  .wrap { flex-wrap: wrap; }
+
+  @media (max-width: 720px) {
+    .form-grid { grid-template-columns: 1fr; }
+    .form-group.span2 { grid-column: span 1; }
+    main { padding: 16px 12px; }
+    .stat-grid { grid-template-columns: repeat(2,1fr); }
+  }
+</style>
+</head>
+<body>
+
+<!-- ══ HEADER ══════════════════════════════════════════════════════════ -->
+<header>
+  <div class="logo">DFIR<span>.</span>Report</div>
+  <div class="tagline">M365 / Entra ID — Automated DFIR Report Generator</div>
+  <div class="badge">ANALYST TOOL</div>
+</header>
+
+<!-- ══ STEP NAVIGATION ═════════════════════════════════════════════════ -->
+<div class="steps-nav">
+  <button class="step-btn active" id="nav-step1" onclick="goStep(1)">
+    <span class="num">1</span> Upload Files
+  </button>
+  <button class="step-btn" id="nav-step2" onclick="goStep(2)" disabled>
+    <span class="num">2</span> Configure Incident
+  </button>
+  <button class="step-btn" id="nav-step3" onclick="goStep(3)" disabled>
+    <span class="num">3</span> View Report
+  </button>
+</div>
+
+<!-- ══ STEP 1 — UPLOAD ═════════════════════════════════════════════════ -->
+<main>
+<div class="step-panel active" id="step1">
+
+  <div class="card">
+    <div class="card-title"><span class="icon">📂</span> Upload M365 / Entra ID Log Files</div>
+    <div class="upload-zone" id="dropZone" onclick="triggerFileInput()">
+      <input type="file" id="fileInput" multiple accept=".csv" onchange="handleFiles(this.files)">
+      <span class="icon-big">☁</span>
+      <strong style="font-size:15px">Drag &amp; drop CSV files here</strong>
+      <p>or <span class="browse-link">click to browse</span></p>
+      <p class="mt8">Supports: Interactive Sign-Ins · Non-Interactive Sign-Ins · Auth Details · Message Trace (MTDetail)</p>
+    </div>
+  </div>
+
+  <div class="card" id="fileListCard" style="display:none">
+    <div class="card-title flex justify-between align-center" style="margin-bottom:0">
+      <span><span class="icon">📋</span> Uploaded Files</span>
+      <button class="btn btn-secondary" style="font-size:11px;padding:4px 10px" onclick="clearFiles()">Clear All</button>
+    </div>
+    <div style="margin-top:14px">
+      <ul class="file-list" id="fileList"></ul>
+    </div>
+
+    <div id="parseProgress" style="display:none">
+      <div class="progress-wrap" style="margin-top:16px">
+        <div class="progress-label" id="progressLabel">Parsing files…</div>
+        <div class="progress-bar-outer"><div class="progress-bar-inner" id="progressBar"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DATA PREVIEW (after parsing) -->
+  <div id="previewSection" style="display:none">
+    <div class="card">
+      <div class="card-title"><span class="icon">🔍</span> Data Preview</div>
+      <div class="stat-grid" id="previewStats"></div>
+      <div id="previewAlerts"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="icon">🌐</span> Top IPs by Event Count</div>
+      <div class="bar-chart" id="ipBarChart"></div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+      <div class="card">
+        <div class="card-title"><span class="icon">⚠️</span> Error Codes Found</div>
+        <div class="bar-chart" id="errorBarChart"></div>
+      </div>
+      <div class="card">
+        <div class="card-title"><span class="icon">📱</span> Applications Found</div>
+        <div class="bar-chart" id="appBarChart"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="btn-group" id="step1Btns" style="display:none">
+    <button class="btn btn-primary" onclick="goStep(2)">Continue to Configuration →</button>
+    <button class="btn btn-secondary" onclick="showSampleModal()">📋 Sample CSV Headers</button>
+  </div>
+
+  <div class="btn-group" style="margin-top:8px">
+    <button class="btn btn-secondary" onclick="showSampleModal()">📋 Sample CSV Headers</button>
+  </div>
+
+</div>
+
+<!-- ══ STEP 2 — CONFIGURE ══════════════════════════════════════════════ -->
+<div class="step-panel" id="step2">
+
+  <div class="card">
+    <div class="card-title"><span class="icon">⚙️</span> Incident Configuration</div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Report Reference</label>
+        <input type="text" id="cfg_ref" value="DFIR-2026-001" placeholder="e.g. DFIR-2026-001">
+      </div>
+      <div class="form-group">
+        <label>Victim Email Address</label>
+        <input type="email" id="cfg_victim" placeholder="user@domain.com">
+      </div>
+      <div class="form-group">
+        <label>Victim Organisation</label>
+        <input type="text" id="cfg_org" placeholder="Acme Pty Ltd">
+      </div>
+      <div class="form-group">
+        <label>Analyst Name / Organisation</label>
+        <input type="text" id="cfg_analyst" placeholder="DFIR Team">
+      </div>
+      <div class="form-group">
+        <label>Incident Start (UTC)</label>
+        <input type="date" id="cfg_start">
+      </div>
+      <div class="form-group">
+        <label>Incident End (UTC)</label>
+        <input type="date" id="cfg_end">
+      </div>
+      <div class="form-group">
+        <label>Home Country (victim's expected sign-in country)</label>
+        <input type="text" id="cfg_country" placeholder="Australia">
+      </div>
+      <div class="form-group">
+        <label>Classification</label>
+        <select id="cfg_class">
+          <option>CONFIDENTIAL — RESTRICTED</option>
+          <option>CONFIDENTIAL</option>
+          <option>INTERNAL USE ONLY</option>
+          <option>UNCLASSIFIED</option>
+        </select>
+      </div>
+      <div class="form-group span2">
+        <label>Known Attacker IPs (optional — comma-separated)</label>
+        <input type="text" id="cfg_attackerips" placeholder="104.234.53.200, 63.135.161.19, 45.130.83.68">
+      </div>
+      <div class="form-group span2">
+        <label>Additional Context / Notes for Analyst</label>
+        <textarea id="cfg_notes" placeholder="Any additional context: suspected attack vector, business context, remediation already taken…"></textarea>
+      </div>
+    </div>
+  </div>
+
+  <div class="btn-group">
+    <button class="btn btn-secondary" onclick="goStep(1)">← Back</button>
+    <button class="btn btn-primary" id="generateBtn" onclick="generateReport()">
+      <span class="spinner" id="genSpinner" style="display:none"></span>
+      Generate Report →
+    </button>
+  </div>
+
+</div>
+
+<!-- ══ STEP 3 — REPORT ════════════════════════════════════════════════ -->
+<div class="step-panel" id="step3">
+
+  <div class="flex justify-between align-center" style="margin-bottom:16px;flex-wrap:wrap;gap:10px">
+    <div class="flex align-center gap8">
+      <span id="reportSeverityBadge"></span>
+      <span style="font-size:13px;color:var(--muted)" id="reportRefLabel"></span>
+    </div>
+    <div class="flex gap8 wrap">
+      <button class="btn btn-secondary" onclick="copyMarkdown()">📋 Copy Markdown</button>
+      <button class="btn btn-success" onclick="downloadMarkdown()">⬇ Download .md</button>
+      <button class="btn btn-secondary" onclick="goStep(1)">← New Report</button>
+    </div>
+  </div>
+
+  <div class="tab-bar">
+    <button class="tab-btn active" onclick="switchTab('preview')">👁 Rendered Preview</button>
+    <button class="tab-btn" onclick="switchTab('raw')">📄 Raw Markdown</button>
+    <button class="tab-btn" onclick="switchTab('stats')">📊 Statistics</button>
+  </div>
+
+  <div class="tab-content active" id="tab-preview">
+    <div class="md-render" id="mdPreview"></div>
+  </div>
+
+  <div class="tab-content" id="tab-raw">
+    <textarea class="raw-md" id="rawMd" readonly></textarea>
+    <div class="btn-group">
+      <button class="btn btn-secondary" onclick="copyMarkdown()">📋 Copy to Clipboard</button>
+    </div>
+  </div>
+
+  <div class="tab-content" id="tab-stats">
+    <div id="statsPanel"></div>
+  </div>
+
+</div>
+</main>
+
+<!-- ══ SAMPLE HEADERS MODAL ═══════════════════════════════════════════ -->
+<div class="modal-overlay" id="sampleModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>📋 Expected CSV Headers</h3>
+      <button class="modal-close" onclick="closeSampleModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="color:var(--muted);margin-bottom:16px;font-size:13px">Export these fields from <strong>Entra ID &gt; Sign-in logs &gt; Download CSV</strong>. The tool auto-detects file type from headers.</p>
+
+      <h4 style="color:var(--accent);margin-bottom:8px">Interactive / Non-Interactive Sign-Ins</h4>
+      <pre>Date (UTC),User principal name,User,Application,IP address,Location city,Location country or region,Sign-in error code,Failure reason,Status,Conditional access,Multifactor authentication auth method,Multifactor authentication result,Browser,Device detail,Authentication requirement,Correlation ID</pre>
+
+      <h4 style="color:var(--accent);margin:16px 0 8px">Auth Details (Expanded)</h4>
+      <pre>Date (UTC),User principal name,Application,IP address,Correlation ID,Authentication Method,Authentication Requirement,Result detail,Token protection Sign-in Session</pre>
+
+      <h4 style="color:var(--accent);margin:16px 0 8px">Message Trace (MTDetail)</h4>
+      <pre>date_time,client_ip,client_hostname,server_ip,connector_id,source_context,message_id,message_subject,sender_address,recipient_address,event_id,detail,original_client_ip,total_bytes</pre>
+
+      <div class="alert alert-info mt8">
+        <span>ℹ</span>
+        <span>Column names are matched case-insensitively. The tool recognises many variants exported by different M365 portal versions.</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════ -->
+<!-- JAVASCRIPT                                                         -->
+<!-- ══════════════════════════════════════════════════════════════════ -->
+<script>
+'use strict';
+
+/* ═══════════════════════════════════════════════════════════
+   GLOBAL STATE
+═══════════════════════════════════════════════════════════ */
+const state = {
+  files: [],          // { file, type, name, size, events: [] }
+  allEvents: [],      // merged + normalised events
+  analysis: null,     // analysis result object
+  reportMd: '',
+};
+
+const FIELD_MAP = {
+  timestamp: ['date (utc)','createddatetime','date_time','time generated','date','timestamp'],
+  user:      ['user principal name','userprincipalname','user','sender_address','sender address'],
+  app:       ['application','appdisplayname','client app','clientappused','app display name'],
+  ip:        ['ip address','ipaddress','client_ip','original_client_ip','ip','client ip'],
+  city:      ['location city','locationcity','city','location'],
+  country:   ['location country or region','locationcountryorregion','country/region','country','countryorregion','location country'],
+  errorCode: ['sign-in error code','errorcode','result type','resulttype','failure reason','result detail','resultdetail'],
+  mfaMethod: ['multifactor authentication auth method','authenticationmethod','authentication method','mfa auth method'],
+  mfaResult: ['multifactor authentication result','authenticationrequirement','authentication requirement','mfa result'],
+  caStatus:  ['conditional access','conditionalaccessstatus','conditional access status'],
+  userAgent: ['browser','useragent','user agent','client_hostname','device detail','device'],
+  subject:   ['message_subject','subject','message subject'],
+  recipient: ['recipient_address','recipients','recipient address','recipient'],
+  eventType: ['event_id','event type','event_type'],
+  corrId:    ['correlation id','correlationid','correlation_id'],
+  status:    ['status','sign-in status','result'],
+  tokenProt: ['token protection sign-in session','token protection','tokenprotection'],
+};
+
+const ERROR_CODES = {
+  '0':      'Success',
+  '50053':  'Account locked out',
+  '50126':  'Invalid username or password',
+  '50140':  'Keep Me Signed In interrupt (KMSI)',
+  '50133':  'Session expired / revoked',
+  '50173':  'OAuth grant revoked (post password reset)',
+  '399218': 'User confirmation required',
+  '50020':  'Unexpected token',
+  '65002':  'Consent required',
+  '50132':  'Password reset required',
+  '70011':  'Invalid scope',
+  '50034':  'User account does not exist',
+  '50076':  'MFA required',
+  '50079':  'MFA registration required',
+  '53003':  'Blocked by Conditional Access',
+  '70043':  'Token expired',
+  '16000':  'Select account prompt',
+};
+
+/* ═══════════════════════════════════════════════════════════
+   STEP NAVIGATION
+═══════════════════════════════════════════════════════════ */
+let currentStep = 1;
+
+function goStep(n) {
+  if (n === 2 && state.files.length === 0) {
+    alert('Please upload at least one CSV file before continuing.');
+    return;
+  }
+  currentStep = n;
+  document.querySelectorAll('.step-panel').forEach((p,i) => p.classList.toggle('active', i+1===n));
+  document.querySelectorAll('.step-btn').forEach((b,i) => {
+    b.classList.remove('active','done');
+    if (i+1 === n) b.classList.add('active');
+    else if (i+1 < n) b.classList.add('done');
+    b.disabled = (i+1 > n && !(i+1 === n+1 && state.files.length > 0));
+  });
+  // unlock step2 once files loaded, step3 once report generated
+  const s2 = document.getElementById('nav-step2');
+  const s3 = document.getElementById('nav-step3');
+  if (state.files.length > 0) s2.disabled = false;
+  if (state.reportMd) s3.disabled = false;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   TAB SWITCHING
+═══════════════════════════════════════════════════════════ */
+function switchTab(tab) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  event.target.classList.add('active');
+  document.getElementById('tab-'+tab).classList.add('active');
+}
+
+/* ═══════════════════════════════════════════════════════════
+   FILE UPLOAD & DRAG-DROP
+═══════════════════════════════════════════════════════════ */
+const dropZone = document.getElementById('dropZone');
+
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropZone.classList.remove('drag-over');
+  handleFiles(e.dataTransfer.files);
+});
+
+function triggerFileInput() { document.getElementById('fileInput').click(); }
+
+function handleFiles(fileList) {
+  const newFiles = Array.from(fileList).filter(f => f.name.toLowerCase().endsWith('.csv'));
+  if (newFiles.length === 0) { showAlert('No CSV files detected.','warn'); return; }
+
+  newFiles.forEach(f => {
+    if (!state.files.find(x => x.name === f.name && x.size === f.size)) {
+      state.files.push({ file: f, name: f.name, size: f.size, type: 'unknown', events: [] });
+    }
+  });
+
+  document.getElementById('fileListCard').style.display = 'block';
+  renderFileList();
+  parseAllFiles();
+}
+
+function clearFiles() {
+  state.files = [];
+  state.allEvents = [];
+  state.analysis = null;
+  state.reportMd = '';
+  document.getElementById('fileListCard').style.display = 'none';
+  document.getElementById('previewSection').style.display = 'none';
+  document.getElementById('step1Btns').style.display = 'none';
+  document.getElementById('fileInput').value = '';
+  document.getElementById('nav-step2').disabled = true;
+}
+
+function renderFileList() {
+  const ul = document.getElementById('fileList');
+  ul.innerHTML = '';
+  state.files.forEach((f, i) => {
+    const typeClass = 'type-' + f.type.toLowerCase().replace(/[^a-z]/g,'');
+    const sizeStr = f.size > 1048576 ? (f.size/1048576).toFixed(1)+' MB' : (f.size/1024).toFixed(0)+' KB';
+    const eventStr = f.events.length > 0 ? ` · ${f.events.length.toLocaleString()} events` : '';
+    const sizeWarn = f.size > 10485760 ? ' ⚠ >10MB' : '';
+    ul.innerHTML += `<li class="file-item">
+      <span class="f-icon">📄</span>
+      <div class="f-info">
+        <div class="f-name" title="${escHtml(f.name)}">${escHtml(f.name)}</div>
+        <div class="f-meta">${sizeStr}${sizeWarn}${eventStr}</div>
+      </div>
+      <span class="f-type ${typeClass}">${f.type}</span>
+      <button class="f-remove" onclick="removeFile(${i})" title="Remove">✕</button>
+    </li>`;
+  });
+}
+
+function removeFile(i) {
+  state.files.splice(i,1);
+  if (state.files.length === 0) { clearFiles(); return; }
+  rebuildAllEvents();
+  renderFileList();
+  renderPreview();
+}
+
+/* ═══════════════════════════════════════════════════════════
+   CSV PARSING
+═══════════════════════════════════════════════════════════ */
+let parseQueue = [];
+let parsePending = 0;
+
+function parseAllFiles() {
+  state.allEvents = [];
+  state.files.forEach(f => f.events = []);
+  parsePending = state.files.length;
+  document.getElementById('parseProgress').style.display = 'block';
+  updateProgress(0, 'Starting parse…');
+
+  state.files.forEach((fileObj, idx) => {
+    parseFile(fileObj, idx);
+  });
+}
+
+function parseFile(fileObj, idx) {
+  console.log(`[DFIR-1] parseFile START: ${fileObj.name} (${(fileObj.size/1024/1024).toFixed(1)} MB)`);
+  updateProgress(null, `Parsing ${fileObj.name}…`);
+
+  Papa.parse(fileObj.file, {
+    header: true,
+    skipEmptyLines: true,
+    worker: true,
+    complete: (results) => {
+      console.log(`[DFIR-2] PapaParse complete: ${fileObj.name} → ${results.data.length} raw rows, errors: ${results.errors.length}`);
+      if (results.errors.length) console.warn('[DFIR-2] Parse errors:', results.errors.slice(0,3));
+
+      const rawRows = results.data;
+      if (!rawRows.length) {
+        console.log(`[DFIR-2b] Empty file: ${fileObj.name}`);
+        fileObj.events = [];
+        fileObj.headers = [];
+        fileObj.type = 'unknown';
+        finishFile(fileObj, []);
+        return;
+      }
+
+      const headers = Object.keys(rawRows[0]).map(h => h.toLowerCase().trim());
+      fileObj.type    = detectFileType(headers);
+      fileObj.headers = headers;
+      console.log(`[DFIR-3] Detected type: ${fileObj.type} for ${fileObj.name}, headers[0..3]: ${headers.slice(0,4).join(', ')}`);
+
+      const CHUNK = 2000;
+      let i = 0;
+      const normalised = [];
+      normalised.length = rawRows.length; // pre-allocate
+      let writeIdx = 0;
+
+      function processChunk() {
+        const end = Math.min(i + CHUNK, rawRows.length);
+        console.log(`[DFIR-4] normalise chunk ${i}–${end} of ${rawRows.length} for ${fileObj.name}`);
+        // Inner try-catch per row so i always advances even if a row is malformed
+        for (; i < end; i++) {
+          try {
+            const n = normaliseRow(rawRows[i], fileObj.type);
+            if (n) normalised[writeIdx++] = n;
+          } catch(e) {
+            console.warn(`[DFIR-4] skipping row ${i} (${fileObj.name}):`, e.message, rawRows[i]);
+          }
+        }
+        updateProgress(null,
+          `Normalising ${fileObj.name}: ${i.toLocaleString()} / ${rawRows.length.toLocaleString()} rows…`);
+
+        if (i < rawRows.length) {
+          setTimeout(processChunk, 0);
+        } else {
+          normalised.length = writeIdx;
+          fileObj.events = normalised;
+          console.log(`[DFIR-5] Normalisation done: ${fileObj.name} → ${normalised.length} events`);
+          finishFile(fileObj, normalised);
+        }
+      }
+      processChunk();
+    },
+    error: (err) => {
+      console.error(`[DFIR-ERR] PapaParse error for ${fileObj.name}:`, err);
+      parsePending--;
+    }
+  });
+}
+
+function finishFile(fileObj, rows) {
+  parsePending--;
+  console.log(`[DFIR-6] finishFile: ${fileObj.name}, parsePending now = ${parsePending}`);
+  const done = state.files.length - parsePending;
+  updateProgress(
+    Math.round(done / state.files.length * 100),
+    parsePending > 0
+      ? `Parsed ${fileObj.name} (${rows.length.toLocaleString()} events)`
+      : 'Parse complete.'
+  );
+
+  if (parsePending === 0) {
+    console.log('[DFIR-7] All files done. Starting post-parse pipeline…');
+    updateProgress(100, 'Building event index…');
+    setTimeout(() => {
+      console.log('[DFIR-8] rebuildAllEvents START');
+      try {
+        rebuildAllEvents();
+        console.log(`[DFIR-8] rebuildAllEvents DONE — total events: ${state.allEvents.length}`);
+      } catch(e) {
+        console.error('[DFIR-8] rebuildAllEvents THREW:', e);
+      }
+      updateProgress(100, 'Rendering file list…');
+      setTimeout(() => {
+        console.log('[DFIR-9] renderFileList START');
+        try { renderFileList(); } catch(e) { console.error('[DFIR-9] renderFileList THREW:', e); }
+        console.log('[DFIR-9] renderFileList DONE');
+        updateProgress(100, 'Computing preview stats…');
+        setTimeout(() => {
+          console.log('[DFIR-10] renderPreview START');
+          try { renderPreview(); } catch(e) { console.error('[DFIR-10] renderPreview THREW:', e); }
+          console.log('[DFIR-10] renderPreview DONE — pipeline complete');
+          document.getElementById('parseProgress').style.display = 'none';
+          document.getElementById('previewSection').style.display = 'block';
+          document.getElementById('step1Btns').style.display = 'flex';
+          document.getElementById('nav-step2').disabled = false;
+        }, 50);
+      }, 50);
+    }, 50);
+  }
+}
+
+function updateProgress(pct, label) {
+  if (pct !== null) document.getElementById('progressBar').style.width = pct + '%';
+  if (label) document.getElementById('progressLabel').textContent = label;
+}
+
+function rebuildAllEvents() {
+  // Pre-allocate exact size — avoids reallocation and the spread/push(...) stack-overflow
+  // that occurs when pushing 24 000+ items as function arguments
+  let total = 0;
+  state.files.forEach(f => { total += (f.events||[]).length; });
+  state.allEvents = new Array(total);
+  let idx = 0;
+  state.files.forEach(f => {
+    const evts = f.events || [];
+    for (let i = 0; i < evts.length; i++) state.allEvents[idx++] = evts[i];
+  });
+  state.allEvents.sort((a, b) => a._ts - b._ts);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   FILE TYPE DETECTION
+═══════════════════════════════════════════════════════════ */
+function detectFileType(headers) {
+  const h = headers.join(' ');
+  // Message trace
+  if ((h.includes('event_id') || h.includes('event type')) &&
+      (h.includes('client_ip') || h.includes('sender_address') || h.includes('message_subject') || h.includes('sender address'))) {
+    return 'messagetrace';
+  }
+  // Auth details
+  if (h.includes('authenticationmethod') || h.includes('authentication method') || h.includes('correlationid') || h.includes('correlation id')) {
+    if (h.includes('authenticationrequirement') || h.includes('token protection') || h.includes('authentication requirement') || h.includes('correlation')) {
+      return 'authdetails';
+    }
+  }
+  // Interactive (smaller, has browser/device detail)
+  if ((h.includes('user principal name') || h.includes('userprincipalname')) &&
+      (h.includes('ip address') || h.includes('ipaddress')) &&
+      (h.includes('application') || h.includes('app'))) {
+    if (h.includes('browser') || h.includes('device') || h.includes('conditional access')) {
+      return 'interactive';
+    }
+    return 'noninteractive';
+  }
+  return 'unknown';
+}
+
+/* ═══════════════════════════════════════════════════════════
+   ROW NORMALISATION
+═══════════════════════════════════════════════════════════ */
+function normaliseRow(raw, fileType) {
+  if (!raw || typeof raw !== 'object') return null;
+  const lk = {};
+  Object.keys(raw).forEach(k => {
+    const v = raw[k];
+    lk[k.toLowerCase().trim()] = (v != null && typeof v === 'string') ? v.trim() : (v != null ? String(v) : '');
+  });
+
+  const get = (candidates) => {
+    if (!candidates) return '';
+    for (const c of candidates) {
+      const v = lk[c];
+      if (v !== undefined && v !== '') return v;
+    }
+    return '';
+  };
+
+  const tsStr = get(FIELD_MAP.timestamp);
+  return {
+    fileType,
+    _ts:       tsStr ? (Date.parse(tsStr) || 0) : 0,   // pre-computed numeric — fast sorting
+    timestamp:  tsStr,
+    user:       get(FIELD_MAP.user).toLowerCase(),
+    app:        get(FIELD_MAP.app),
+    ip:         get(FIELD_MAP.ip),
+    city:       get(FIELD_MAP.city),
+    country:    get(FIELD_MAP.country),
+    errorCode:  (get(FIELD_MAP.errorCode) || '').replace(/\D/g,'') || '0',
+    mfaMethod:  get(FIELD_MAP.mfaMethod),
+    mfaResult:  get(FIELD_MAP.mfaResult),
+    caStatus:   get(FIELD_MAP.caStatus),
+    userAgent:  get(FIELD_MAP.userAgent),
+    subject:    get(FIELD_MAP.subject),
+    recipient:  get(FIELD_MAP.recipient),
+    eventType:  get(FIELD_MAP.eventType),
+    corrId:     get(FIELD_MAP.corrId),
+    status:     get(FIELD_MAP.status),
+    tokenProt:  get(FIELD_MAP.tokenProt),
+    // _raw intentionally omitted — reduces memory by ~50% for large files
+  };
+}
+
+/* ═══════════════════════════════════════════════════════════
+   PREVIEW RENDER
+═══════════════════════════════════════════════════════════ */
+function renderPreview() {
+  const events = state.allEvents;
+  const victim = (document.getElementById('cfg_victim')||{}).value||'';
+
+  // Single-pass over all events for all stats — avoids 4 separate O(n) loops
+  const victimLc = victim.toLowerCase();
+  let minTs = Infinity, maxTs = -Infinity;
+  let victimCount = 0;
+  const ipFreq = {}, errFreq = {}, appFreq = {};
+
+  for (let i = 0, len = events.length; i < len; i++) {
+    const e = events[i];
+    if (e._ts) {
+      if (e._ts < minTs) minTs = e._ts;
+      if (e._ts > maxTs) maxTs = e._ts;
+    }
+    if (victimLc && e.user && e.user.includes(victimLc)) victimCount++;
+    if (e.ip)  ipFreq[e.ip]  = (ipFreq[e.ip]  || 0) + 1;
+    if (e.errorCode && e.errorCode !== '0') errFreq[e.errorCode] = (errFreq[e.errorCode] || 0) + 1;
+    if (e.app) appFreq[e.app] = (appFreq[e.app] || 0) + 1;
+  }
+
+  const dateRange = minTs !== Infinity ? `${fmtDate(new Date(minTs))} → ${fmtDate(new Date(maxTs))}` : 'Unknown';
+  const topIPs    = Object.entries(ipFreq).sort((a,b)=>b[1]-a[1]).slice(0,10);
+  const topErrors = Object.entries(errFreq).sort((a,b)=>b[1]-a[1]).slice(0,5);
+  const topApps   = Object.entries(appFreq).sort((a,b)=>b[1]-a[1]).slice(0,10);
+  const uniqueIPs = Object.keys(ipFreq).length;
+
+  document.getElementById('previewStats').innerHTML = `
+    <div class="stat-box"><div class="stat-num">${events.length.toLocaleString()}</div><div class="stat-label">Total Events</div></div>
+    <div class="stat-box"><div class="stat-num">${state.files.length}</div><div class="stat-label">Files Parsed</div></div>
+    <div class="stat-box"><div class="stat-num">${uniqueIPs}</div><div class="stat-label">Unique IPs</div></div>
+    <div class="stat-box"><div class="stat-num ${victimCount>0?'success':'warning'}">${victimCount.toLocaleString()}</div><div class="stat-label">Victim Events</div></div>
+    <div class="stat-box"><div class="stat-num">${Object.keys(appFreq).length}</div><div class="stat-label">Unique Apps</div></div>
+    <div class="stat-box"><div class="stat-num">${dateRange}</div><div class="stat-label" style="font-size:9px">Date Range</div></div>
+  `;
+
+  const alerts = document.getElementById('previewAlerts');
+  alerts.innerHTML = '';
+  if (victim && victimCount === 0) {
+    alerts.innerHTML += `<div class="alert alert-warn">⚠ Victim email <strong>${escHtml(victim)}</strong> not found in logs. Proceeding will analyse all users.</div>`;
+  }
+  state.files.forEach(f => {
+    if (f.type === 'unknown') {
+      alerts.innerHTML += `<div class="alert alert-warn">⚠ <strong>${escHtml(f.name)}</strong> — file type could not be determined. Headers: <span class="monospace" style="font-size:11px">${escHtml((f.headers||[]).slice(0,5).join(', '))}</span></div>`;
+    }
+    if (f.size > 10485760) {
+      alerts.innerHTML += `<div class="alert alert-info">ℹ <strong>${escHtml(f.name)}</strong> is &gt;10 MB. Streaming parse was used.</div>`;
+    }
+  });
+
+  // Bar charts
+  renderBarChart('ipBarChart', topIPs, 'danger');
+  renderBarChart('errorBarChart', topErrors.map(([c,n]) => [`${c} — ${ERROR_CODES[c]||'Unknown'}`, n]), 'warning');
+  renderBarChart('appBarChart', topApps, 'accent');
+}
+
+function renderBarChart(id, data, colorClass) {
+  const el = document.getElementById(id);
+  if (!data.length) { el.innerHTML = '<div class="text-muted" style="font-size:12px;padding:8px">No data</div>'; return; }
+  const max = data[0][1];
+  el.innerHTML = data.map(([label, val]) => `
+    <div class="bar-row">
+      <div class="bar-label" title="${escHtml(label)}">${escHtml(label)}</div>
+      <div class="bar-track">
+        <div class="bar-fill ${colorClass}" style="width:${Math.max(3,val/max*100)}%"></div>
+      </div>
+      <div class="bar-val">${val.toLocaleString()}</div>
+    </div>
+  `).join('');
+}
+
+/* ═══════════════════════════════════════════════════════════
+   ANALYSIS ENGINE
+═══════════════════════════════════════════════════════════ */
+function analyse() {
+  const cfg = getConfig();
+  const events = state.allEvents;
+
+  // Filter to victim if specified
+  const victimEmail = cfg.victim.toLowerCase();
+  const victimEvents = victimEmail
+    ? events.filter(e => e.user.includes(victimEmail) || e.user === victimEmail)
+    : events;
+
+  // Supplement: use all events for sign-in logs but filter message trace
+  const signInEvents = victimEvents.filter(e => e.fileType !== 'messagetrace');
+  const mtEvents = events.filter(e => e.fileType === 'messagetrace' &&
+    (e.user.includes(victimEmail) || !victimEmail));
+
+  // Known attacker IPs from config
+  const knownAttackerIPs = cfg.attackerIPs
+    .split(',').map(s=>s.trim()).filter(Boolean);
+
+  /* ── IP FREQUENCY MAP ─────────────────────────── */
+  const ipFreq = {};
+  const ipCountryMap = {};
+  const ipCityMap = {};
+  signInEvents.forEach(e => {
+    if (!e.ip) return;
+    ipFreq[e.ip] = (ipFreq[e.ip]||0) + 1;
+    if (e.country && !ipCountryMap[e.ip]) ipCountryMap[e.ip] = e.country;
+    if (e.city && !ipCityMap[e.ip]) ipCityMap[e.ip] = e.city;
+  });
+
+  /* ── HOME COUNTRY DETECTION ───────────────────── */
+  let homeCountry = cfg.homeCountry.trim();
+  if (!homeCountry) {
+    // auto-detect from majority
+    const countryFreq = {};
+    signInEvents.forEach(e => {
+      if (e.country) countryFreq[e.country] = (countryFreq[e.country]||0)+1;
+    });
+    const sorted = Object.entries(countryFreq).sort((a,b)=>b[1]-a[1]);
+    homeCountry = sorted.length ? sorted[0][0] : '';
+  }
+
+  /* ── IP CLASSIFICATION ────────────────────────── */
+  const suspiciousIPs = new Set(knownAttackerIPs);
+  const ipAppMap = {};
+  const ipUAMap = {};
+  const ipEventMap = {};
+
+  signInEvents.forEach(e => {
+    if (!e.ip) return;
+    const country = ipCountryMap[e.ip] || '';
+    if (homeCountry && country && !country.toLowerCase().includes(homeCountry.toLowerCase())) {
+      suspiciousIPs.add(e.ip);
+    }
+    if (!ipEventMap[e.ip]) ipEventMap[e.ip] = [];
+    ipEventMap[e.ip].push(e);
+    if (e.app) {
+      if (!ipAppMap[e.ip]) ipAppMap[e.ip] = new Set();
+      ipAppMap[e.ip].add(e.app);
+    }
+    if (e.userAgent) {
+      if (!ipUAMap[e.ip]) ipUAMap[e.ip] = new Set();
+      ipUAMap[e.ip].add(e.userAgent);
+    }
+  });
+
+  /* ── ERROR CODE ANALYSIS ──────────────────────── */
+  const errorCodes = {};
+  signInEvents.forEach(e => {
+    if (e.errorCode && e.errorCode !== '0') {
+      errorCodes[e.errorCode] = (errorCodes[e.errorCode]||0)+1;
+    }
+  });
+
+  /* ── MFA ANALYSIS ─────────────────────────────── */
+  const mfaMethods = {};
+  let tokenReplayCount = 0;
+  let mfaPushApprovedForeign = false;
+  let noMfaCount = 0;
+  let caNotAppliedCount = 0;
+  let kmsiEvents = [];
+  let mfaPreviouslySatisfiedFromForeign = [];
+
+  signInEvents.forEach(e => {
+    if (e.mfaMethod) mfaMethods[e.mfaMethod] = (mfaMethods[e.mfaMethod]||0)+1;
+    if (!e.mfaMethod && !e.mfaResult) noMfaCount++;
+    if (e.caStatus && e.caStatus.toLowerCase().includes('not applied')) caNotAppliedCount++;
+    if (e.errorCode === '50140') kmsiEvents.push(e);
+
+    const isSuspiciousIP = suspiciousIPs.has(e.ip) || knownAttackerIPs.includes(e.ip);
+    const mfaLow = (e.mfaMethod||'').toLowerCase();
+    if (isSuspiciousIP && (mfaLow.includes('previously satisfied') || mfaLow.includes('previously'))) {
+      tokenReplayCount++;
+      mfaPreviouslySatisfiedFromForeign.push(e);
+    }
+    if (isSuspiciousIP && mfaLow.includes('mobile app notification')) {
+      mfaPushApprovedForeign = true;
+    }
+  });
+
+  /* ── DWELL TIME ───────────────────────────────── */
+  const suspEvents = signInEvents.filter(e => suspiciousIPs.has(e.ip));
+  const suspTs = suspEvents.map(e => e._ts).filter(t => t > 0).sort((a, b) => a - b);
+  let dwellHours = 0;
+  let firstAttack = null, lastAttack = null;
+  if (suspTs.length >= 2) {
+    firstAttack = new Date(suspTs[0]);
+    lastAttack  = new Date(suspTs[suspTs.length - 1]);
+    dwellHours  = (suspTs[suspTs.length - 1] - suspTs[0]) / 3600000;
+  }
+
+  /* ── IMPOSSIBLE TRAVEL ────────────────────────── */
+  const impossibleTravel = [];
+  const sortedSuspEvents = suspEvents.filter(e => e._ts > 0).sort((a, b) => a._ts - b._ts);
+  for (let i = 1; i < sortedSuspEvents.length; i++) {
+    const prev = sortedSuspEvents[i-1];
+    const curr = sortedSuspEvents[i];
+    if (prev.ip !== curr.ip && prev.country && curr.country && prev.country !== curr.country) {
+      const diff = (curr._ts - prev._ts) / 60000;
+      if (diff < 60 && diff >= 0) {
+        impossibleTravel.push({ from: prev, to: curr, minutes: Math.round(diff) });
+      }
+    }
+  }
+
+  /* ── RECONNAISSANCE DETECTION ─────────────────── */
+  const reconApps = ['my signins','my profile','my apps','myapps','mysignins','myprofile'];
+  const reconEvents = signInEvents.filter(e =>
+    suspiciousIPs.has(e.ip) && reconApps.some(r => (e.app||'').toLowerCase().includes(r))
+  );
+
+  const psAttempts = signInEvents.filter(e =>
+    suspiciousIPs.has(e.ip) && (e.app||'').toLowerCase().includes('azure ad powershell')
+  );
+
+  /* ── SESSION ANALYSIS ─────────────────────────── */
+  const sessionsByIP = {};
+  signInEvents.forEach(e => {
+    if (!e.ip) return;
+    if (!sessionsByIP[e.ip]) sessionsByIP[e.ip] = [];
+    sessionsByIP[e.ip].push(e);
+  });
+
+  /* ── APP ANALYSIS ─────────────────────────────── */
+  const appsBySuspIP = new Set();
+  const chatClientEvents = [];
+  suspEvents.forEach(e => {
+    if (e.app) {
+      appsBySuspIP.add(e.app);
+      if ((e.app||'').toLowerCase().includes('m365chat') || (e.app||'').toLowerCase().includes('teams')) {
+        chatClientEvents.push(e);
+      }
+    }
+  });
+
+  /* ── NODE-FETCH DETECTION ─────────────────────── */
+  const nodeFetchEvents = signInEvents.filter(e =>
+    (e.userAgent||'').toLowerCase().includes('node-fetch')
+  );
+
+  /* ── TOKEN UNBOUND DETECTION ──────────────────── */
+  const unboundTokenEvents = signInEvents.filter(e =>
+    (e.tokenProt||'').toLowerCase().includes('unbound') ||
+    (e.tokenProt||'').includes('1002')
+  );
+
+  /* ── MASS EMAIL DETECTION ─────────────────────── */
+  let massEmailResult = null;
+  if (mtEvents.length > 0) {
+    const sendEvents = mtEvents.filter(e => {
+      const et = (e.eventType||'').toLowerCase();
+      return et.includes('sendexternal') || et.includes('transfer') || et.includes('submit') || et.includes('receive');
+    });
+
+    // Sliding 10-minute window — two-pointer O(n) instead of O(n²)
+    const sendTimestamps = sendEvents
+      .filter(e => e._ts > 0)
+      .sort((a, b) => a._ts - b._ts);
+
+    let maxRecipients = 0;
+    let maxWindow = null;
+    let right = 0;
+
+    for (let left = 0; left < sendTimestamps.length; left++) {
+      const windowEnd = sendTimestamps[left]._ts + 10 * 60 * 1000;
+      while (right < sendTimestamps.length - 1 && sendTimestamps[right + 1]._ts <= windowEnd) right++;
+      const inWindow = sendTimestamps.slice(left, right + 1);
+      const recips = new Set(inWindow.map(x => x.recipient).filter(Boolean));
+      if (recips.size > maxRecipients) {
+        maxRecipients = recips.size;
+        maxWindow = { start: new Date(sendTimestamps[left]._ts), end: new Date(windowEnd), events: inWindow };
+      }
+    }
+
+    if (maxRecipients > 50) {
+      const sendingIPs = [...new Set(maxWindow.events.map(e=>e.ip).filter(Boolean))];
+      const subjects = [...new Set(mtEvents.map(e=>e.subject).filter(Boolean))];
+      const allRecipients = new Set(mtEvents.map(e=>e.recipient).filter(Boolean));
+
+      massEmailResult = {
+        recipientCount: allRecipients.size,
+        windowRecipients: maxRecipients,
+        windowStart: maxWindow.start,
+        windowEnd: maxWindow.end,
+        sendingIPs,
+        subjects: subjects.slice(0,8),
+        totalMTEvents: mtEvents.length,
+        sendEventCount: sendEvents.length,
+        eventTypes: (() => {
+          const et = {};
+          mtEvents.forEach(e => { const t=(e.eventType||'?'); et[t]=(et[t]||0)+1; });
+          return et;
+        })(),
+      };
+    }
+  }
+
+  /* ── SUSPICIOUS IP SUMMARY ────────────────────── */
+  const suspIPSummary = [...suspiciousIPs].map(ip => ({
+    ip,
+    country: ipCountryMap[ip] || 'Unknown',
+    city: ipCityMap[ip] || '',
+    events: (ipEventMap[ip]||[]).length,
+    apps: [...(ipAppMap[ip]||[])],
+    userAgents: [...(ipUAMap[ip]||[])],
+  })).sort((a,b) => b.events - a.events);
+
+  /* ── IOC COLLECTION ───────────────────────────── */
+  const iocs = [];
+
+  suspIPSummary.forEach(s => {
+    iocs.push({ type: 'IP Address', value: s.ip, context: `${s.country}${s.city?' / '+s.city:''} — ${s.events} events, apps: ${s.apps.slice(0,3).join(', ')}` });
+  });
+
+  const allUAs = new Set();
+  [...suspiciousIPs].forEach(ip => {
+    (ipUAMap[ip]||new Set()).forEach(ua => {
+      if (ua && !allUAs.has(ua)) { allUAs.add(ua); iocs.push({ type: 'User Agent', value: ua, context: `From suspicious IP ${ip}` }); }
+    });
+  });
+
+  if (victimEmail) iocs.push({ type: 'Account', value: victimEmail, context: 'Compromised account' });
+
+  if (massEmailResult) {
+    massEmailResult.sendingIPs.forEach(ip => iocs.push({ type: 'Sending IP', value: ip, context: 'Used for mass email campaign' }));
+    massEmailResult.subjects.forEach(s => { if (s) iocs.push({ type: 'Email Subject', value: s, context: 'Mass email / BEC indicator' }); });
+  }
+
+  /* ── MITRE ATT&CK MAPPING ─────────────────────── */
+  const mitre = [];
+
+  if (impossibleTravel.length > 0 || tokenReplayCount > 0) {
+    mitre.push({ id: 'T1550.004', name: 'Use Alternate Authentication Material: Web Session Cookie', evidence: `Token replay detected: ${tokenReplayCount} sign-ins with "Previously satisfied" MFA from suspicious IPs.${impossibleTravel.length?' Impossible travel: '+impossibleTravel.length+' instances.':''}` });
+  }
+  if (mfaPushApprovedForeign) {
+    mitre.push({ id: 'T1621', name: 'Multi-Factor Authentication Request Generation', evidence: 'Mobile app notification MFA approved from foreign/suspicious IP — push notification fatigue or AiTM-triggered approval.' });
+  }
+  if (nodeFetchEvents.length > 0 || impossibleTravel.length > 0) {
+    mitre.push({ id: 'T1557.002', name: 'Adversary-in-the-Middle: ARP Cache Poisoning / Proxy', evidence: `node-fetch UA detected: ${nodeFetchEvents.length} events. Impossible geographic travel indicates proxy relay.` });
+  }
+  if (reconEvents.length > 0) {
+    mitre.push({ id: 'T1087.004', name: 'Account Discovery: Cloud Account', evidence: `${reconEvents.length} sign-ins to My Signins / My Profile / My Apps from suspicious IPs — attacker mapping victim baseline.` });
+  }
+  if (massEmailResult) {
+    mitre.push({ id: 'T1566 / T1598', name: 'Phishing / Spearphishing (outbound)', evidence: `Mass email detected: ~${massEmailResult.recipientCount} recipients. Subjects: ${massEmailResult.subjects.slice(0,2).join(', ')}.` });
+  }
+  if (suspEvents.some(e => (e.app||'').toLowerCase().includes('outlook') || (e.app||'').toLowerCase().includes('owa'))) {
+    mitre.push({ id: 'T1114.002', name: 'Email Collection: Remote Email Collection', evidence: 'OWA / Outlook Web sessions from suspicious IPs.' });
+  }
+  if (psAttempts.length > 0) {
+    mitre.push({ id: 'T1078.004 / T1098', name: 'Valid Accounts: Cloud Accounts / Account Manipulation', evidence: `Azure AD PowerShell sign-in attempted from suspicious IP: ${psAttempts.map(e=>e.ip).join(', ')}` });
+  }
+  if (chatClientEvents.length > 0) {
+    mitre.push({ id: 'T1530', name: 'Data from Cloud Storage', evidence: `${chatClientEvents.length} Teams/M365ChatClient sign-in events from suspicious IPs — possible chat data access.` });
+  }
+
+  /* ── SEVERITY RATING ──────────────────────────── */
+  let severity = 'LOW';
+  let severityJustification = 'No confirmed compromise events detected.';
+  const hasMFABypass = mfaPushApprovedForeign || tokenReplayCount > 0;
+  const hasForeignSuccess = suspEvents.some(e => !e.errorCode || e.errorCode === '0');
+  if (hasMFABypass && dwellHours > 24 && massEmailResult) {
+    severity = 'CRITICAL';
+    severityJustification = 'MFA bypass confirmed + dwell > 24 hours + mass email campaign detected.';
+  } else if (hasMFABypass || (hasForeignSuccess && dwellHours > 24)) {
+    severity = 'HIGH';
+    severityJustification = hasMFABypass ? 'MFA bypass confirmed from foreign IP.' : 'Foreign IP successful sign-ins with extended dwell time.';
+  } else if (hasForeignSuccess || suspEvents.length > 0) {
+    severity = 'MEDIUM';
+    severityJustification = 'Suspicious foreign IP activity detected, extent of access unclear.';
+  } else if (Object.keys(errorCodes).length > 0) {
+    severity = 'LOW';
+    severityJustification = 'Failed login attempts only — no confirmed successful foreign access.';
+  }
+
+  /* ── TIMELINE BUILDING ────────────────────────── */
+  const timeline = [];
+
+  // Sign-in timeline
+  const timelineEvents = signInEvents.filter(e => e._ts > 0)
+    .sort((a, b) => a._ts - b._ts);
+
+  timelineEvents.forEach(e => {
+    const isSusp = suspiciousIPs.has(e.ip);
+    const errLabel = e.errorCode !== '0' ? `Error ${e.errorCode}: ${ERROR_CODES[e.errorCode]||'Unknown'}` : 'Success';
+    const annotation = isSusp
+      ? (knownAttackerIPs.includes(e.ip) ? 'ATTACKER_CONFIRMED' : 'SUSPICIOUS')
+      : 'LEGITIMATE';
+    timeline.push({
+      timestamp: e.timestamp,
+      event: errLabel,
+      ip: e.ip,
+      country: e.country,
+      app: e.app,
+      annotation,
+      mfa: e.mfaMethod,
+      ca: e.caStatus,
+    });
+  });
+
+  // Add mass email events to timeline
+  if (massEmailResult) {
+    const blastTs = massEmailResult.windowStart.getTime();
+    timeline.push({
+      _ts: blastTs,
+      timestamp: massEmailResult.windowStart.toISOString(),
+      event: `MASS EMAIL BLAST BEGINS — ${massEmailResult.recipientCount} recipients`,
+      ip: massEmailResult.sendingIPs[0]||'',
+      app: 'Exchange Online',
+      annotation: 'ATTACKER_CONFIRMED',
+    });
+  }
+
+  timeline.sort((a, b) => {
+    const ta = a._ts || (a.timestamp ? Date.parse(a.timestamp) : 0);
+    const tb = b._ts || (b.timestamp ? Date.parse(b.timestamp) : 0);
+    return ta - tb;
+  });
+
+  /* ── FORENSIC GAPS ────────────────────────────── */
+  const gaps = [];
+  const fileTypes = state.files.map(f=>f.type);
+  if (!fileTypes.includes('messagetrace')) gaps.push({ gap: 'Message Trace (MTDetail) not provided', impact: 'Cannot assess email sending behaviour, spam campaign, BEC indicators', action: 'Export Message Trace from Exchange Admin Center or Microsoft 365 Defender' });
+  if (!fileTypes.includes('authdetails')) gaps.push({ gap: 'Auth Details log not provided', impact: 'Cannot confirm MFA methods, token protection status, or correlation with specific auth events', action: 'Export Auth Details from Entra ID Sign-in logs' });
+  if (!fileTypes.includes('interactive')) gaps.push({ gap: 'Interactive Sign-Ins not provided', impact: 'Cannot assess browser-based sessions, MFA completions, or KMSI events', action: 'Export Interactive Sign-ins from Entra ID' });
+  if (!fileTypes.includes('noninteractive')) gaps.push({ gap: 'Non-Interactive Sign-Ins not provided', impact: 'Cannot assess background token refresh, app-level persistence, or full dwell period', action: 'Export Non-Interactive Sign-ins from Entra ID' });
+  gaps.push({ gap: 'Unified Audit Log (UAL) not analysed', impact: 'Cannot confirm inbox rules, file downloads, Teams messages sent, OAuth consents', action: 'Pull UAL via Purview Compliance Portal or Search-UnifiedAuditLog PowerShell' });
+  gaps.push({ gap: 'OneDrive / SharePoint access logs not provided', impact: 'File exfiltration cannot be confirmed or excluded', action: 'Export from Defender for Cloud Apps or UAL FileAccessed events' });
+
+  return {
+    cfg,
+    homeCountry,
+    suspiciousIPs: [...suspiciousIPs],
+    suspIPSummary,
+    errorCodes,
+    mfaMethods,
+    tokenReplayCount,
+    mfaPushApprovedForeign,
+    noMfaCount,
+    caNotAppliedCount,
+    kmsiEvents,
+    mfaPreviouslySatisfiedFromForeign,
+    impossibleTravel,
+    reconEvents,
+    psAttempts,
+    chatClientEvents,
+    nodeFetchEvents,
+    unboundTokenEvents,
+    massEmailResult,
+    mitre,
+    iocs,
+    severity,
+    severityJustification,
+    dwellHours,
+    firstAttack,
+    lastAttack,
+    timeline,
+    gaps,
+    signInEvents,
+    suspEvents,
+    mtEvents,
+    victimEvents,
+    appsBySuspIP: [...appsBySuspIP],
+    ipCountryMap,
+    ipCityMap,
+    ipFreq,
+    ipAppMap,
+    ipUAMap,
+  };
+}
+
+/* ═══════════════════════════════════════════════════════════
+   CONFIG HELPER
+═══════════════════════════════════════════════════════════ */
+function getConfig() {
+  return {
+    ref:        document.getElementById('cfg_ref').value || 'DFIR-YYYY-001',
+    victim:     document.getElementById('cfg_victim').value.trim(),
+    org:        document.getElementById('cfg_org').value.trim() || 'Unknown Organisation',
+    analyst:    document.getElementById('cfg_analyst').value.trim() || 'DFIR Analyst',
+    start:      document.getElementById('cfg_start').value,
+    end:        document.getElementById('cfg_end').value,
+    homeCountry:document.getElementById('cfg_country').value.trim(),
+    attackerIPs:document.getElementById('cfg_attackerips').value.trim(),
+    notes:      document.getElementById('cfg_notes').value.trim(),
+    class_:     document.getElementById('cfg_class').value,
+  };
+}
+
+/* ═══════════════════════════════════════════════════════════
+   REPORT GENERATION
+═══════════════════════════════════════════════════════════ */
+function generateReport() {
+  if (state.files.length === 0) { alert('No files loaded.'); return; }
+
+  const genBtn = document.getElementById('generateBtn');
+  const spinner = document.getElementById('genSpinner');
+  genBtn.disabled = true;
+  spinner.style.display = 'inline-block';
+
+  setTimeout(() => {
+    try {
+      state.analysis = analyse();
+      state.reportMd = buildMarkdown(state.analysis);
+
+      // Render
+      document.getElementById('rawMd').value = state.reportMd;
+
+      if (typeof marked !== 'undefined') {
+        document.getElementById('mdPreview').innerHTML = marked.parse(state.reportMd);
+      } else {
+        document.getElementById('mdPreview').innerHTML = '<pre style="white-space:pre-wrap">' + escHtml(state.reportMd) + '</pre>';
+      }
+
+      renderStats(state.analysis);
+
+      const sev = state.analysis.severity;
+      const sevEl = document.getElementById('reportSeverityBadge');
+      sevEl.innerHTML = `<span class="sev sev-${sev.toLowerCase()}">${sev}</span>`;
+      document.getElementById('reportRefLabel').textContent = state.analysis.cfg.ref;
+
+      document.getElementById('nav-step3').disabled = false;
+      goStep(3);
+    } catch(e) {
+      console.error(e);
+      alert('Error during analysis: ' + e.message);
+    } finally {
+      genBtn.disabled = false;
+      spinner.style.display = 'none';
+    }
+  }, 100);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   MARKDOWN BUILDER
+═══════════════════════════════════════════════════════════ */
+function buildMarkdown(a) {
+  const cfg = a.cfg;
+  const today = new Date().toISOString().split('T')[0];
+  const sev = a.severity;
+  const sevEmoji = {CRITICAL:'🔴', HIGH:'🟠', MEDIUM:'🟡', LOW:'🟢'}[sev]||'⚪';
+  const dwellStr = a.dwellHours > 0
+    ? `${Math.floor(a.dwellHours/24)} day(s) ${Math.floor(a.dwellHours%24)} hour(s)`
+    : 'Insufficient data to confirm';
+  const firstAttackStr = a.firstAttack ? a.firstAttack.toISOString() : 'Unknown';
+  const lastAttackStr  = a.lastAttack  ? a.lastAttack.toISOString()  : 'Unknown';
+  const periodStr = cfg.start && cfg.end ? `${cfg.start} to ${cfg.end}` : (a.firstAttack ? `${firstAttackStr} to ${lastAttackStr}` : 'See log date range');
+
+  const logSummary = state.files.map(f => `${f.name} (${f.type}, ${f.events.length.toLocaleString()} events)`).join('; ');
+  const totalEvents = state.files.reduce((s,f)=>s+f.events.length,0);
+
+  /* ── EXECUTIVE SUMMARY NARRATIVE ── */
+  const victimDisplay = cfg.victim || 'the victim account';
+  const orgDisplay = cfg.org || 'the organisation';
+  const homeDisplay = a.homeCountry || 'the expected region';
+
+  let execNarrative = '';
+  if (a.severity === 'CRITICAL' || a.severity === 'HIGH') {
+    execNarrative = `The Microsoft 365 account of \`${victimDisplay}\` at ${orgDisplay} was compromised`;
+    if (a.mfaPushApprovedForeign || a.tokenReplayCount > 0) {
+      execNarrative += ' through an **Adversary-in-the-Middle (AiTM) phishing attack** that successfully bypassed Multi-Factor Authentication';
+    }
+    if (a.firstAttack && a.lastAttack) {
+      execNarrative += `. The attacker maintained persistent access for approximately **${dwellStr}**.`;
+    } else {
+      execNarrative += '.';
+    }
+    if (a.suspIPSummary.length > 0) {
+      const topIP = a.suspIPSummary[0];
+      execNarrative += ` The attacker operated from ${topIP.country}-based IP infrastructure (${topIP.ip}).`;
+    }
+    if (a.massEmailResult) {
+      const mr = a.massEmailResult;
+      execNarrative += ` A mass email campaign was executed sending to approximately **${mr.recipientCount.toLocaleString()} recipients** within a short time window.`;
+    }
+    if (a.caNotAppliedCount > 0) {
+      execNarrative += ` **${a.caNotAppliedCount.toLocaleString()} sign-in events** showed no Conditional Access policy applied throughout the incident window — a critical security control gap.`;
+    }
+  } else if (a.severity === 'MEDIUM') {
+    execNarrative = `Suspicious sign-in activity was detected for \`${victimDisplay}\` at ${orgDisplay} originating from IP addresses outside the expected country (${homeDisplay}). Full account compromise is not confirmed but cannot be excluded.`;
+  } else {
+    execNarrative = `Analysis of the provided M365 logs for \`${victimDisplay}\` at ${orgDisplay} detected failed sign-in attempts and/or noise from external IPs. No confirmed successful account compromise was identified in the available log data.`;
+  }
+
+  /* ── KEY FINDINGS ── */
+  const keyFindings = [];
+  if (a.mfaPushApprovedForeign) keyFindings.push('**MFA Bypass:** Mobile app push notification MFA was approved from a suspicious/foreign IP, consistent with AiTM phishing or MFA fatigue attack.');
+  if (a.tokenReplayCount > 0) keyFindings.push(`**Token Replay:** ${a.tokenReplayCount} sign-in events from suspicious IPs show MFA = "Previously satisfied" — indicating stolen session token replay without new MFA completion.`);
+  if (a.caNotAppliedCount > 0) keyFindings.push(`**Zero Conditional Access Controls:** ${a.caNotAppliedCount.toLocaleString()} sign-in events show Conditional Access = Not Applied. Sign-ins from foreign countries were never challenged.`);
+  if (a.dwellHours > 0) keyFindings.push(`**${dwellStr} Dwell Time:** Attacker maintained active sessions across the dwell period.`);
+  if (a.massEmailResult) keyFindings.push(`**Mass Email Campaign:** ~${a.massEmailResult.recipientCount.toLocaleString()} recipients targeted in a short window (${fmtDate(a.massEmailResult.windowStart)} UTC).`);
+  if (a.chatClientEvents.length > 0) keyFindings.push(`**Persistent Teams/Chat Access:** ${a.chatClientEvents.length} Teams/M365ChatClient sign-in events from suspicious IPs — potential data access and internal BEC.`);
+  if (a.reconEvents.length > 0) keyFindings.push(`**Reconnaissance:** ${a.reconEvents.length} sign-ins to My Signins / My Profile / My Apps from suspicious IPs — attacker mapping victim baseline.`);
+  if (a.psAttempts.length > 0) keyFindings.push(`**Privilege Escalation Attempt:** Azure AD PowerShell accessed from suspicious IP ${a.psAttempts[0].ip} — attempted tenant management.`);
+  if (a.nodeFetchEvents.length > 0) keyFindings.push(`**AiTM Tooling Fingerprint:** \`node-fetch\` user agent detected (${a.nodeFetchEvents.length} events) — consistent with evilginx2/Modlishka or similar AiTM proxy framework.`);
+  if (keyFindings.length === 0) keyFindings.push('No high-confidence compromise indicators detected in the available log data. See Forensic Gaps for limitations.');
+
+  /* ── TIMELINE TABLE (first 60 events, then summarise) ── */
+  const tlEvents = a.timeline.slice(0,80);
+  const tlRows = tlEvents.map(e => {
+    const annotColor = {LEGITIMATE:'', SUSPICIOUS:'⚠ ', ATTACKER_CONFIRMED:'🔴 ', REMEDIATION:'✅ '}[e.annotation]||'';
+    return `| ${fmtTs(e.timestamp)} | ${annotColor}${e.event||''} | \`${e.ip||'N/A'}\` ${e.country?'('+e.country+')':''} | ${e.app||'N/A'} | ${e.annotation} |`;
+  }).join('\n');
+
+  /* ── IOC TABLE ── */
+  const iocRows = a.iocs.map(ioc =>
+    `| ${ioc.type} | \`${ioc.value}\` | ${ioc.context} |`
+  ).join('\n');
+
+  /* ── MITRE TABLE ── */
+  const mitreRows = a.mitre.map(m =>
+    `| ${m.id} | ${m.name} | ${m.evidence} |`
+  ).join('\n');
+  const mitreSection = a.mitre.length > 0
+    ? `| Action / MITRE ID | Technique Name | Log Evidence |\n|---|---|---|\n${mitreRows}`
+    : '_Insufficient data to map MITRE ATT&CK techniques with confidence._';
+
+  /* ── SUSPICIOUS IP TABLE ── */
+  const suspIPRows = a.suspIPSummary.slice(0,20).map(s =>
+    `| \`${s.ip}\` | ${s.country} ${s.city?'/ '+s.city:''} | ${s.events} | ${s.apps.slice(0,3).join(', ')||'N/A'} | ${s.userAgents.slice(0,1).join('')||'N/A'} |`
+  ).join('\n');
+
+  /* ── ERROR CODE TABLE ── */
+  const errRows = Object.entries(a.errorCodes)
+    .sort((x,y)=>y[1]-x[1])
+    .map(([code, count]) => `| ${code} | ${ERROR_CODES[code]||'Unknown'} | ${count} |`)
+    .join('\n');
+
+  /* ── MFA TABLE ── */
+  const mfaRows = Object.entries(a.mfaMethods)
+    .sort((x,y)=>y[1]-x[1])
+    .map(([m,c]) => `| ${m} | ${c} |`)
+    .join('\n');
+
+  /* ── MASS EMAIL SECTION ── */
+  let spamSection = '';
+  if (a.massEmailResult) {
+    const mr = a.massEmailResult;
+    const etRows = Object.entries(mr.eventTypes).map(([k,v])=>`| ${k} | ${v} |`).join('\n');
+    spamSection = `
+## SPAM / MASS EMAIL CAMPAIGN ANALYSIS
+
+### Campaign Overview
+
+| Metric | Value |
+|---|---|
+| **Start Time** | ${fmtTs(mr.windowStart.toISOString())} UTC |
+| **End Time** | ${fmtTs(mr.windowEnd.toISOString())} UTC |
+| **Total Unique Recipients** | **${mr.recipientCount.toLocaleString()}** |
+| **Sending IP(s)** | ${mr.sendingIPs.join(', ')||'See logs'} |
+| **Total Message Trace Events** | ${mr.totalMTEvents} |
+| **Send Events** | ${mr.sendEventCount} |
+
+### Email Subjects Observed
+
+${mr.subjects.map(s=>`- \`${s}\``).join('\n')||'_No subjects captured_'}
+
+### Message Trace Event Type Breakdown
+
+| Event Type | Count |
+|---|---|
+${etRows||'| No data | - |'}
+
+### BEC Risk Assessment
+
+The attacker had full authenticated OWA/Exchange access during the dwell period. Reply activity observed in message trace subjects indicates the attacker may have engaged in active Business Email Compromise (BEC) behaviour — responding to active business threads while impersonating the victim.
+
+**All active email threads during the dwell period (${periodStr}) must be reviewed for fraudulent instructions.**
+`;
+  } else {
+    spamSection = `
+## SPAM / MASS EMAIL CAMPAIGN ANALYSIS
+
+_No Message Trace data was provided. Cannot assess email sending activity._
+
+**Forensic gap:** Obtain Message Trace from Exchange Admin Center or Microsoft 365 Defender to determine whether the compromised account was used to send emails.
+`;
+  }
+
+  /* ── CHAT CLIENT SECTION ── */
+  let chatSection = '';
+  if (a.chatClientEvents.length > 0) {
+    chatSection = `
+## M365CHATCLIENT / TEAMS APPLICATION ANALYSIS
+
+### Sign-In Events via Teams / M365ChatClient
+
+**${a.chatClientEvents.length} sign-in events** to Teams-related applications (M365ChatClient, IC3 Gateway, Teams Services) were recorded from suspicious IPs during the incident window.
+
+| IP | Application | Events | Notes |
+|---|---|---|---|
+${a.suspIPSummary.filter(s=>s.apps.some(ap=>ap.toLowerCase().includes('m365chat')||ap.toLowerCase().includes('teams'))).map(s=>
+  `| \`${s.ip}\` | ${s.apps.filter(ap=>ap.toLowerCase().includes('m365chat')||ap.toLowerCase().includes('teams')).join(', ')} | ${s.events} | ${s.country} |`
+).join('\n')||'| See suspicious IP table | — | — | — |'}
+
+### Risk Assessment
+
+M365ChatClient is a Microsoft first-party application (Teams chat infrastructure). It requires no additional user consent and is available by default. The attacker's Teams access during the dwell period creates risk of:
+- Reading victim's Teams chat history and channel messages
+- Sending Teams messages impersonating the victim (internal BEC)
+- Accessing shared files in Teams channels
+- Gathering business intelligence from internal communications
+
+**Teams audit logs (Purview) should be reviewed to determine the scope of Teams access.**
+`;
+  }
+
+  /* ── RECOMMENDATIONS ── */
+  const immediateRecs = [
+    ['CRITICAL', '**Revoke all active sessions** — use `Revoke-AzureADUserAllRefreshToken` or Entra ID portal', 'Session tokens from compromise period remain valid until explicitly revoked'],
+    ['CRITICAL', '**Force password reset** with a strong, unique password', 'Attacker may retain valid credentials'],
+    ['CRITICAL', '**Pull Unified Audit Log (UAL)** for the incident period — search for `New-InboxRule`, `Set-InboxRule`, `MailItemsAccessed`, `FileAccessed`, `Send`', 'UAL provides ground truth for what the attacker read, sent, and modified'],
+    ['HIGH', '**Review and remove any inbox rules** created during the incident period', 'Attacker may have created rules to conceal activity or forward emails'],
+    ['HIGH', `**Block suspicious IP ranges** in Entra ID Named Locations and Conditional Access: ${a.suspIPSummary.slice(0,5).map(s=>s.ip).join(', ')}`, 'Prevent continued access from confirmed attacker infrastructure'],
+  ];
+  if (a.massEmailResult) {
+    immediateRecs.push(['HIGH', `**Notify affected recipients** that emails from \`${cfg.victim}\` during the incident period may have been sent by an attacker`, 'Reputational damage mitigation and BEC fraud prevention']);
+    immediateRecs.push(['MEDIUM', '**Check domain against spam blocklists** (Spamhaus, Barracuda, MX Toolbox) and initiate delisting', 'Email deliverability impact from mass send']);
+  }
+
+  const shortTermRecs = [
+    ['CRITICAL', '**Enforce phishing-resistant MFA** — migrate to FIDO2 security keys or Microsoft Authenticator with **number matching enabled**', 'Push notification MFA is vulnerable to AiTM and fatigue attacks'],
+    ['CRITICAL', '**Deploy Conditional Access policies immediately:** (1) Block/challenge sign-ins from outside expected countries; (2) Require compliant/Entra-joined device; (3) Enable risk-based CA with Entra ID Protection', 'Zero CA policies were in place — this is the single highest-impact gap'],
+    ['HIGH', '**Enable Entra ID Protection** — configure risk policies: User Risk ≥ Medium → force password change; Sign-in Risk ≥ Medium → MFA challenge', 'Would detect impossible travel, anomalous IP, and leaked credential signals'],
+    ['HIGH', '**Enable Token Protection Conditional Access policy** to bind session tokens to registered devices', 'Prevents cross-IP/device token replay — directly addresses theft mechanism'],
+    ['HIGH', '**Enable Microsoft Defender for Cloud Apps** with anomaly detection for: Impossible Travel, Mass Download, Suspicious Forwarding, Mass Email', 'Real-time detection of AiTM and BEC patterns'],
+    ['MEDIUM', '**Configure sign-in frequency policy** (re-authenticate every 8–12 hours) for all users', 'Limits dwell time even if session token is stolen'],
+  ];
+
+  const longTermRecs = [
+    ['HIGH', '**Implement SIEM alerting** for: impossible travel (>500 km/hr), sign-ins from bulletproof hosting ASNs, mass email send, new inbox rule, OAuth consent events', 'Reduces mean time to detect from days to hours'],
+    ['HIGH', '**Deploy UEBA (User and Entity Behaviour Analytics)** — baseline each user\'s sign-in pattern; alert on geographic deviations', 'Anomalous New York sessions would alert immediately against an Australian baseline'],
+    ['MEDIUM', '**Mandatory phishing awareness training** — focus on: unexpected MFA push approval (always deny if you didn\'t initiate login); AiTM phishing page recognition', 'Attack succeeded because victim approved an MFA push they did not initiate'],
+    ['MEDIUM', '**Implement DMARC enforcement** (p=reject or p=quarantine) for the sending domain', 'Prevents future outbound spoofing; provides aggregate DMARC reporting'],
+    ['LOW', '**Establish an M365 Incident Response runbook** with pre-authorised IR actions (revocation, reset, rule review)', 'Reduces response time in future incidents'],
+  ];
+
+  const fmtRecTable = (rows) => `| Priority | Action | Rationale |\n|---|---|---|\n${rows.map(r=>`| ${r[0]} | ${r[1]} | ${r[2]} |`).join('\n')}`;
+
+  /* ── FORENSIC GAPS ── */
+  const gapRows = a.gaps.map(g => `| **${g.gap}** | ${g.impact} | ${g.action} |`).join('\n');
+
+  /* ── FILE INVENTORY ── */
+  const fileRows = state.files.map(f => {
+    const sz = f.size > 1048576 ? (f.size/1048576).toFixed(1)+' MB' : (f.size/1024).toFixed(0)+' KB';
+    return `| \`${f.name}\` | ${sz} | ${f.events.length.toLocaleString()} | ${f.type} |`;
+  }).join('\n');
+
+  /* ═══════ ASSEMBLE REPORT ═══════ */
+  const md = `# ${cfg.ref}
+## Digital Forensics & Incident Response Report
+
+---
+
+| Field | Value |
+|---|---|
+| **Report Reference** | ${cfg.ref} |
+| **Classification** | ${cfg.class_} |
+| **Date of Report** | ${today} |
+| **Incident Period** | ${periodStr} |
+| **Victim Account** | ${cfg.victim || '_Not specified_'} |
+| **Victim Organisation** | ${cfg.org} |
+| **Analyst** | ${cfg.analyst} |
+| **Log Sources Analysed** | ${logSummary || '_No files loaded_'} |
+| **Total Log Events Processed** | ${totalEvents.toLocaleString()} events (${state.files.length} file${state.files.length!==1?'s':''}) |
+| **Severity** | ${sevEmoji} **${sev}** |
+| **Home Country / Baseline** | ${a.homeCountry || '_Auto-detected_'} |
+
+---
+
+## TABLE OF CONTENTS
+
+1. [Executive Summary](#1-executive-summary)
+2. [Incident Timeline](#2-incident-timeline)
+3. [Initial Access Analysis](#3-initial-access-analysis)
+4. [Attacker Behavior & MITRE ATT&CK Mapping](#4-attacker-behavior--mitre-attck-mapping)
+5. [M365ChatClient / Teams Analysis](#5-m365chatclient--teams-analysis)
+6. [Spam Campaign Analysis](#6-spam-campaign-analysis)
+7. [Indicators of Compromise (IOCs)](#7-indicators-of-compromise-iocs)
+8. [Impact Assessment](#8-impact-assessment)
+9. [Root Cause Analysis](#9-root-cause-analysis)
+10. [Recommendations](#10-recommendations)
+11. [Forensic Gaps](#11-forensic-gaps)
+12. [Appendix — Log File Inventory](#12-appendix--log-file-inventory)
+
+---
+
+## 1. EXECUTIVE SUMMARY
+
+${execNarrative}
+
+### Key Findings
+
+${keyFindings.map(f => `- ${f}`).join('\n')}
+
+${cfg.notes ? `### Analyst Notes\n\n${cfg.notes}\n` : ''}
+
+### Severity Rating: **${sev}**
+
+**Justification:** ${a.severityJustification}
+
+---
+
+## 2. INCIDENT TIMELINE
+
+All timestamps are UTC.
+
+> **Annotation key:** LEGITIMATE = consistent with victim baseline; SUSPICIOUS = foreign/unusual IP; ATTACKER_CONFIRMED = pre-identified attacker IP or confirmed malicious action; REMEDIATION = session revocation/reset events.
+
+| Timestamp (UTC) | Event | Source IP | Application | Annotation |
+|---|---|---|---|---|
+${tlRows || '| _No timeline events_ | — | — | — | — |'}
+
+${a.timeline.length > 80 ? `\n_Note: Timeline truncated to 80 events for readability. Full event log in uploaded files (${a.timeline.length.toLocaleString()} total events)._\n` : ''}
+
+---
+
+## 3. INITIAL ACCESS ANALYSIS
+
+### Suspicious IP Activity Summary
+
+| IP Address | Country / City | Events | Applications | User Agent |
+|---|---|---|---|---|
+${suspIPRows || '| _No suspicious IPs detected_ | — | — | — | — |'}
+
+### IP Classification Method
+
+- **Home Country / Baseline:** ${a.homeCountry || '_Not specified — used majority country from logs_'}
+- **Foreign IPs flagged:** Any sign-in from a country other than "${a.homeCountry||'auto-detected baseline'}"
+- **Pre-identified attacker IPs:** ${cfg.attackerIPs || '_None specified by analyst_'}
+
+### First Suspicious Sign-In — Direct Log Evidence
+
+${a.suspEvents.length > 0 ? `\`\`\`
+File: ${state.files.find(f=>f.type==='interactive'||f.type==='noninteractive')?.name || 'Sign-in log'}
+Event: ${fmtTs(a.suspEvents[0].timestamp)}
+User: ${a.suspEvents[0].user}
+IP: ${a.suspEvents[0].ip}
+Country: ${a.suspEvents[0].country}
+Application: ${a.suspEvents[0].app}
+Error Code: ${a.suspEvents[0].errorCode} — ${ERROR_CODES[a.suspEvents[0].errorCode]||'Unknown'}
+MFA Method: ${a.suspEvents[0].mfaMethod || 'N/A'}
+Conditional Access: ${a.suspEvents[0].caStatus || 'N/A'}
+\`\`\`` : '_Insufficient data — no suspicious sign-in events identified._'}
+
+### Impossible Travel Events
+
+${a.impossibleTravel.length > 0
+  ? a.impossibleTravel.slice(0,5).map(it =>
+    `- **${Math.round(it.minutes)} minutes** between \`${it.from.ip}\` (${it.from.country}) at ${fmtTs(it.from.timestamp)} → \`${it.to.ip}\` (${it.to.country}) at ${fmtTs(it.to.timestamp)}`
+  ).join('\n')
+  : '_No impossible travel events detected._'}
+
+### MFA Events from Suspicious IPs
+
+${a.tokenReplayCount > 0
+  ? `- **Token replay events (MFA = "Previously satisfied" from suspicious IPs):** ${a.tokenReplayCount}`
+  : '- No token replay events detected.'}
+${a.mfaPushApprovedForeign
+  ? `- **⚠ Mobile app push notification MFA was approved from a suspicious/foreign IP** — consistent with AiTM phishing or MFA fatigue.`
+  : ''}
+${a.kmsiEvents.length > 0
+  ? `- **KMSI (Keep Me Signed In) events:** ${a.kmsiEvents.length} — error code 50140 interrupts observed.`
+  : ''}
+
+### Error Code Summary
+
+| Error Code | Meaning | Count |
+|---|---|---|
+${errRows || '| _No error codes found_ | — | — |'}
+
+### Authentication Methods Observed
+
+| MFA Method | Count |
+|---|---|
+${mfaRows || '| _No MFA data found_ | — |'}
+
+- **Conditional Access "Not Applied" events:** ${a.caNotAppliedCount.toLocaleString()}
+- **Token Unbound (1002) events:** ${a.unboundTokenEvents.length}
+- **node-fetch user agent events (AiTM indicator):** ${a.nodeFetchEvents.length}
+
+---
+
+## 4. ATTACKER BEHAVIOR & MITRE ATT\&CK MAPPING
+
+${mitreSection}
+
+### Reconnaissance Activity
+
+${a.reconEvents.length > 0
+  ? `${a.reconEvents.length} sign-ins to cloud account discovery applications (My Signins, My Profile, My Apps) detected from suspicious IPs — consistent with an attacker mapping the victim's sign-in baseline and security posture.`
+  : '_No reconnaissance application access detected from suspicious IPs._'}
+
+### Azure AD PowerShell / Privilege Escalation Attempts
+
+${a.psAttempts.length > 0
+  ? a.psAttempts.map(e => `- **${fmtTs(e.timestamp)}** — \`${e.ip}\` attempted access to \`${e.app}\` (Error: ${e.errorCode} — ${ERROR_CODES[e.errorCode]||'Unknown'})`).join('\n')
+  : '_No Azure AD PowerShell or privilege escalation attempts detected._'}
+
+### Applications Accessed from Suspicious IPs
+
+${a.appsBySuspIP.length > 0
+  ? a.appsBySuspIP.map(app => `- ${app}`).join('\n')
+  : '_No application data available for suspicious IPs._'}
+
+${chatSection || ''}
+
+${spamSection}
+
+---
+
+## 7. INDICATORS OF COMPROMISE (IOCs)
+
+| IOC Type | Value | Context |
+|---|---|---|
+${iocRows || '| _No IOCs extracted_ | — | — |'}
+
+---
+
+## 8. IMPACT ASSESSMENT
+
+### Data Access Risk
+
+${a.suspEvents.length > 0
+  ? `**${a.severity === 'CRITICAL' || a.severity === 'HIGH' ? 'HIGH RISK' : 'MEDIUM RISK'} — Potential data access from suspicious IPs**
+
+The attacker had authenticated access to the following M365 services (based on application sign-in events from suspicious IPs):
+
+| Service | Evidence | Potential Data Exposed |
+|---|---|---|
+${a.appsBySuspIP.map(app => `| ${app} | Authenticated sign-in from suspicious IP | Account data, communications, files depending on application |`).join('\n')||'| _See application list above_ | — | — |}'}
+
+**Forensic gap:** Sign-in logs confirm access was established but do not confirm what data was read or exfiltrated. Unified Audit Log (UAL) events (MailItemsAccessed, FileAccessed) are required to enumerate specific accessed content.`
+  : '_Insufficient data to assess data access impact. No confirmed suspicious IP sign-ins._'}
+
+### Email / Messaging Impact
+
+${a.massEmailResult
+  ? `**HIGH RISK — Mass email campaign executed**
+- ~${a.massEmailResult.recipientCount.toLocaleString()} external recipients impacted
+- Email sent from legitimate M365 infrastructure — high deliverability and trust
+- Domain reputation risk: may be flagged by spam filters / blocklists
+- BEC risk: attacker may have replied to active business threads`
+  : `_No Message Trace data provided — email impact cannot be assessed._`}
+
+### Business Email Compromise (BEC) Risk
+
+${a.massEmailResult && a.massEmailResult.subjects.some(s=>s.toLowerCase().includes('re:'))
+  ? `**CRITICAL — Active BEC indicators detected**
+Reply subjects observed in message trace include business-context emails. Each active reply thread during the dwell period must be reviewed to determine if fraudulent instructions were communicated.`
+  : a.suspEvents.length > 0
+  ? 'The attacker had OWA/Exchange access during the dwell period. BEC risk is present but cannot be confirmed without UAL email access events.'
+  : '_Insufficient data to assess BEC risk._'}
+
+---
+
+## 9. ROOT CAUSE ANALYSIS
+
+### Primary Cause
+
+${a.caNotAppliedCount > 0
+  ? `**Absence of Conditional Access Policies**
+
+${a.caNotAppliedCount.toLocaleString()} sign-in events show \`Conditional Access = Not Applied\`. This is the most critical finding. With properly configured Conditional Access, the following controls would have blocked or challenged the attack:
+
+- **Location-based policy:** Block or require additional verification for sign-ins from outside "${a.homeCountry||'expected region'}"
+- **Risk-based policy:** Entra ID Protection detects unusual locations and impossible travel — risk-based CA would force re-authentication
+- **Device compliance policy:** Require Entra ID-joined or compliant device — attacker's unregistered endpoint would be blocked
+- **Sign-in frequency policy:** Force re-authentication to limit token-based dwell time
+- **Token protection policy:** Bind tokens to registered devices — prevents geographic token portability`
+  : '_Conditional Access status could not be assessed from the available log data._'}
+
+### Secondary Cause
+
+${a.mfaPushApprovedForeign
+  ? `**Push Notification MFA Vulnerability**
+
+MFA was technically configured and functional — the victim completed MFA. However, push notification MFA is vulnerable to:
+- **AiTM phishing:** The victim approved a push notification triggered by the attacker's proxy session, not their own login
+- **MFA Fatigue:** Repeated push notifications until the user approves out of frustration
+
+**FIDO2/passkeys or Microsoft Authenticator with number matching would have prevented this bypass.**`
+  : '_MFA bypass via push notification was not confirmed in the available log data._'}
+
+### Tertiary Cause
+
+${a.unboundTokenEvents.length > 0
+  ? `**Unbound Session Tokens**
+
+Session tokens were not bound to registered devices (${a.unboundTokenEvents.length} events with token protection = unbound/1002). This allowed stolen tokens to be replayed from any IP without triggering a challenge. Microsoft's Token Protection Conditional Access policy would prevent this.`
+  : a.tokenReplayCount > 0
+  ? `**Token Replay Without Re-Authentication**
+
+${a.tokenReplayCount} sign-in events showed MFA = "Previously satisfied" from suspicious IPs — the stolen token was replayed without any re-authentication challenge.`
+  : '_No token unbinding evidence found in the available log data._'}
+
+---
+
+## 10. RECOMMENDATIONS
+
+### IMMEDIATE (0–24 Hours)
+
+${fmtRecTable(immediateRecs)}
+
+### SHORT-TERM (1–7 Days)
+
+${fmtRecTable(shortTermRecs)}
+
+### LONG-TERM (7+ Days)
+
+${fmtRecTable(longTermRecs)}
+
+---
+
+## 11. FORENSIC GAPS
+
+| Gap | Impact | Recommended Action |
+|---|---|---|
+${gapRows}
+
+---
+
+## 12. APPENDIX — LOG FILE INVENTORY
+
+| File | Size | Events | Type Detected |
+|---|---|---|---|
+${fileRows || '| _No files_ | — | — | — |'}
+
+---
+
+*Report Reference: ${cfg.ref}*
+*Classification: ${cfg.class_}*
+*Prepared by: ${cfg.analyst}*
+*Date: ${today}*
+*All timestamps UTC unless otherwise noted*
+*Generated by DFIR Report Generator — M365 / Entra ID*
+`;
+
+  return md;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   STATS PANEL
+═══════════════════════════════════════════════════════════ */
+function renderStats(a) {
+  const el = document.getElementById('statsPanel');
+  const sev = a.severity;
+  const sevClass = {CRITICAL:'danger',HIGH:'warning',MEDIUM:'',LOW:'success'}[sev]||'';
+
+  const dwellStr = a.dwellHours > 0
+    ? `${Math.floor(a.dwellHours/24)}d ${Math.floor(a.dwellHours%24)}h`
+    : 'N/A';
+
+  el.innerHTML = `
+    <div class="stat-grid">
+      <div class="stat-box"><div class="stat-num ${sevClass}">${sev}</div><div class="stat-label">Severity</div></div>
+      <div class="stat-box"><div class="stat-num ${a.suspiciousIPs.length>0?'danger':'success'}">${a.suspiciousIPs.length}</div><div class="stat-label">Suspicious IPs</div></div>
+      <div class="stat-box"><div class="stat-num ${a.suspEvents.length>0?'danger':'success'}">${a.suspEvents.length.toLocaleString()}</div><div class="stat-label">Susp Events</div></div>
+      <div class="stat-box"><div class="stat-num ${a.caNotAppliedCount>0?'danger':'success'}">${a.caNotAppliedCount.toLocaleString()}</div><div class="stat-label">CA Not Applied</div></div>
+      <div class="stat-box"><div class="stat-num ${a.tokenReplayCount>0?'danger':'success'}">${a.tokenReplayCount}</div><div class="stat-label">Token Replays</div></div>
+      <div class="stat-box"><div class="stat-num ${a.mfaPushApprovedForeign?'danger':'success'}">${a.mfaPushApprovedForeign?'YES':'NO'}</div><div class="stat-label">MFA Bypassed</div></div>
+      <div class="stat-box"><div class="stat-num ${a.dwellHours>24?'danger':a.dwellHours>0?'warning':'success'}">${dwellStr}</div><div class="stat-label">Dwell Time</div></div>
+      <div class="stat-box"><div class="stat-num ${a.massEmailResult?'danger':'success'}">${a.massEmailResult?a.massEmailResult.recipientCount.toLocaleString():'0'}</div><div class="stat-label">Email Recipients</div></div>
+      <div class="stat-box"><div class="stat-num">${a.mitre.length}</div><div class="stat-label">MITRE Techniques</div></div>
+      <div class="stat-box"><div class="stat-num">${a.iocs.length}</div><div class="stat-label">IOCs Extracted</div></div>
+      <div class="stat-box"><div class="stat-num">${a.impossibleTravel.length}</div><div class="stat-label">Impossible Travel</div></div>
+      <div class="stat-box"><div class="stat-num">${state.allEvents.length.toLocaleString()}</div><div class="stat-label">Total Events</div></div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+      <div class="card">
+        <div class="card-title">🔴 Suspicious IPs by Event Count</div>
+        <div class="bar-chart">
+          ${a.suspIPSummary.slice(0,8).map(s=>`
+            <div class="bar-row">
+              <div class="bar-label" title="${escHtml(s.ip)}">${escHtml(s.ip)}</div>
+              <div class="bar-track"><div class="bar-fill danger" style="width:${Math.max(3,s.events/(a.suspIPSummary[0]?.events||1)*100)}%"></div></div>
+              <div class="bar-val">${s.events}</div>
+            </div>`).join('')||'<div class="text-muted" style="font-size:12px">No suspicious IPs</div>'}
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">⚠ Error Codes</div>
+        <div class="bar-chart">
+          ${Object.entries(a.errorCodes).sort((x,y)=>y[1]-x[1]).slice(0,8).map(([code,cnt])=>{
+            const max = Math.max(...Object.values(a.errorCodes));
+            return `<div class="bar-row">
+              <div class="bar-label" title="${ERROR_CODES[code]||'?'}">${code} — ${(ERROR_CODES[code]||'Unknown').slice(0,20)}</div>
+              <div class="bar-track"><div class="bar-fill warning" style="width:${Math.max(3,cnt/max*100)}%"></div></div>
+              <div class="bar-val">${cnt}</div>
+            </div>`;
+          }).join('')||'<div class="text-muted" style="font-size:12px">No error codes</div>'}
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:0">
+      <div class="card-title">🎯 MITRE ATT&CK Techniques Mapped</div>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>ID</th><th>Technique</th><th>Evidence</th></tr></thead>
+          <tbody>
+            ${a.mitre.map(m=>`<tr><td class="text-accent monospace">${escHtml(m.id)}</td><td>${escHtml(m.name)}</td><td class="text-muted" style="font-size:11px">${escHtml(m.evidence)}</td></tr>`).join('')||'<tr><td colspan="3" class="text-muted">No techniques mapped</td></tr>'}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    ${a.massEmailResult ? `<div class="card">
+      <div class="card-title">📧 Mass Email Campaign Details</div>
+      <div class="stat-grid" style="grid-template-columns:repeat(4,1fr)">
+        <div class="stat-box"><div class="stat-num danger">${a.massEmailResult.recipientCount.toLocaleString()}</div><div class="stat-label">Recipients</div></div>
+        <div class="stat-box"><div class="stat-num warning">${a.massEmailResult.sendEventCount}</div><div class="stat-label">Send Events</div></div>
+        <div class="stat-box"><div class="stat-num">${a.massEmailResult.sendingIPs.length}</div><div class="stat-label">Sending IPs</div></div>
+        <div class="stat-box"><div class="stat-num">${a.massEmailResult.subjects.length}</div><div class="stat-label">Subjects</div></div>
+      </div>
+      <div style="margin-top:12px">
+        <strong style="font-size:12px;color:var(--muted)">SUBJECTS OBSERVED:</strong>
+        <ul style="margin-top:6px;padding-left:20px;font-size:12px">
+          ${a.massEmailResult.subjects.map(s=>`<li class="monospace">${escHtml(s)}</li>`).join('')}
+        </ul>
+      </div>
+    </div>` : ''}
+
+    <div class="card">
+      <div class="card-title">🔒 IOC Summary</div>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>IOC Type</th><th>Value</th><th>Context</th></tr></thead>
+          <tbody>
+            ${a.iocs.slice(0,20).map(ioc=>`<tr>
+              <td><span class="f-type type-${ioc.type.toLowerCase().replace(/[^a-z]/g,'')}" style="background:rgba(88,166,255,.1);color:var(--accent)">${escHtml(ioc.type)}</span></td>
+              <td class="monospace" style="font-size:11px;word-break:break-all">${escHtml(ioc.value)}</td>
+              <td class="text-muted" style="font-size:11px">${escHtml(ioc.context)}</td>
+            </tr>`).join('')||'<tr><td colspan="3" class="text-muted">No IOCs extracted</td></tr>'}
+          </tbody>
+        </table>
+        ${a.iocs.length>20?`<div class="text-muted" style="font-size:11px;padding:8px">...and ${a.iocs.length-20} more — see full report</div>`:''}
+      </div>
+    </div>
+  `;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   EXPORT FUNCTIONS
+═══════════════════════════════════════════════════════════ */
+function downloadMarkdown() {
+  if (!state.reportMd) { alert('Generate a report first.'); return; }
+  const ref = (state.analysis?.cfg?.ref || 'DFIR-Report').replace(/[^a-zA-Z0-9-]/g,'_');
+  const blob = new Blob([state.reportMd], { type: 'text/markdown;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `${ref}.md`; a.click();
+  URL.revokeObjectURL(url);
+}
+
+function copyMarkdown() {
+  if (!state.reportMd) { alert('Generate a report first.'); return; }
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(state.reportMd).then(() => {
+      const btn = event.target;
+      const orig = btn.textContent;
+      btn.textContent = '✓ Copied!';
+      setTimeout(() => btn.textContent = orig, 2000);
+    });
+  } else {
+    const ta = document.getElementById('rawMd');
+    ta.select();
+    document.execCommand('copy');
+    alert('Copied to clipboard.');
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   MODAL
+═══════════════════════════════════════════════════════════ */
+function showSampleModal() { document.getElementById('sampleModal').classList.add('open'); }
+function closeSampleModal() { document.getElementById('sampleModal').classList.remove('open'); }
+document.getElementById('sampleModal').addEventListener('click', e => {
+  if (e.target === document.getElementById('sampleModal')) closeSampleModal();
+});
+
+/* ═══════════════════════════════════════════════════════════
+   UTILITY
+═══════════════════════════════════════════════════════════ */
+function escHtml(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function fmtDate(d) {
+  try { return new Date(d).toISOString().split('T')[0]; } catch(e) { return String(d); }
+}
+
+function fmtTs(ts) {
+  try {
+    const d = new Date(ts);
+    if (isNaN(d)) return String(ts||'');
+    return d.toISOString().replace('T',' ').replace(/\.\d{3}Z$/,'Z');
+  } catch(e) { return String(ts||''); }
+}
+
+function showAlert(msg, type='info') {
+  const d = document.createElement('div');
+  d.className = `alert alert-${type}`;
+  d.textContent = msg;
+  document.querySelector('main').insertBefore(d, document.querySelector('main').firstChild);
+  setTimeout(() => d.remove(), 5000);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   CDN FALLBACK CHECK
+═══════════════════════════════════════════════════════════ */
+window.addEventListener('load', () => {
+  if (typeof Papa === 'undefined') {
+    showAlert('⚠ PapaParse CDN failed to load — CSV parsing will not work. Check your internet connection or use a cached version.', 'warn');
+  }
+  if (typeof marked === 'undefined') {
+    showAlert('⚠ marked.js CDN failed to load — report preview will show raw markdown. Download will still work.', 'warn');
+  }
+
+  // Set default date fields to today
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('cfg_end').value = today;
+  const weekAgo = new Date(Date.now() - 7*24*3600*1000).toISOString().split('T')[0];
+  document.getElementById('cfg_start').value = weekAgo;
+});
+
+</script>
+</body>
+</html>
